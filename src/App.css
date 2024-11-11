@@ -1,5 +1,6 @@
 .App {
   text-align: center;
+  padding: 20px;
 }
 
 .App-logo {
@@ -35,4 +36,30 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+.floor-container {
+  margin-top: 20px;
+}
+
+.desk-info {
+  position: fixed;
+  right: 20px;
+  top: 20px;
+  background: white;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.employee {
+  width: 100%;
+  text-align: center;
+}
+
+.desk-id {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
 }
