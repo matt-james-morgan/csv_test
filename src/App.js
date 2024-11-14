@@ -15,6 +15,7 @@ function App() {
   const [floorData, setFloorData] = useState([]);
   const [selectedDesk, setSelectedDesk] = useState(null);
   const [selectedTeam, setSelectedTeam] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const loadCSVData = async () => {
@@ -37,8 +38,7 @@ function App() {
         console.log('First row:', parsedData[0]);
 
         const mappedData = parsedData.map(row => ({
-          floor: parseInt(row.floor),
-          desk_id: row.desk_id,
+          floor_id: row.floor,
           employees: row.employee_name ? [{
             name: row.employee_name,
             team: row.team?.toLowerCase() || 'development'
@@ -61,28 +61,28 @@ function App() {
     loadCSVData();
   }, []);
 
-  const handleDeskDrop = (deskId, employee) => {
-    console.log('Dropping employee:', employee, 'onto desk:', deskId);
+  const handleFloorDrop = (floorId, employee) => {
+    console.log('Dropping employee:', employee, 'onto floor:', floorId);
     setFloorData(prevData => {
-      // First, remove employee from any previous desk
-      const newData = prevData.map(desk => ({
-        ...desk,
-        employees: desk.employees?.filter(emp => emp.name !== employee.name) || []
+      // First, remove employee from any previous floor
+      const newData = prevData.map(floor => ({
+        ...floor,
+        employees: floor.employees?.filter(emp => emp.name !== employee.name) || []
       }));
       
-      // Then, assign employee to new desk
-      return newData.map(desk => {
-        if (desk.desk_id === deskId) {
-          const currentEmployees = desk.employees || [];
+      // Then, assign employee to new floor
+      return newData.map(floor => {
+        if (floor.floor_id === floorId) {
+          const currentEmployees = floor.employees || [];
           return {
-            ...desk,
+            ...floor,
             employees: [...currentEmployees, {
               name: employee.name,
               team: employee.team
             }]
           };
         }
-        return desk;
+        return floor;
       });
     });
   };
@@ -109,132 +109,181 @@ function App() {
     }));
   };
 
-  const getFilteredEmployees = (floorData, teamFilter) => {
+  const getFilteredEmployees = (floorData, teamFilter, search) => {
     const allEmployees = floorData.flatMap(desk => desk.employees || []);
     const uniqueEmployees = Array.from(
       new Map(allEmployees.map(emp => [emp.name, emp])).values()
     );
     
-    if (teamFilter === 'all') {
-      return uniqueEmployees;
-    }
-    
-    return uniqueEmployees.filter(emp => emp.team === teamFilter);
+    return uniqueEmployees.filter(emp => {
+      const matchesTeam = teamFilter === 'all' || emp.team === teamFilter;
+      const matchesSearch = emp.name.toLowerCase().includes(search.toLowerCase());
+      return matchesTeam && matchesSearch;
+    });
   };
 
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="App" style={{ 
         backgroundColor: '#000000',
-        minHeight: '100vh',
+        height: '100vh',  // Exactly viewport height
+        display: 'flex',
+        flexDirection: 'column',
         padding: '20px',
-        color: 'white'  // Makes text white
+        color: 'white',
+        overflow: 'hidden'  // Prevent scrolling
       }}>
-        <h1>Office Floor Plan</h1>
-        <div className="employee-list" style={{
-          padding: '16px',
-          background: '#1a1a1a',  // Dark gray background
-          border: '1px solid #333',
-          borderRadius: '4px',
-          marginBottom: '20px'
+        <h1 style={{ 
+          margin: '0 0 20px 0'  // Reduce margin to just bottom
+        }}>Office Floor Plan</h1>
+        
+        <div style={{
+          display: 'flex',
+          gap: '20px',
+          height: 'calc(100% - 60px)',  // Subtract header height + margins
+          overflow: 'hidden'  // Prevent scrolling
         }}>
-          <h3>Employees</h3>
-          <div style={{
+          {/* Employee List Section */}
+          <div className="employee-list" style={{
+            padding: '16px',
+            background: '#1a1a1a',
+            border: '1px solid #333',
+            borderRadius: '4px',
+            width: '200px',
             display: 'flex',
-            gap: '8px',
-            marginBottom: '12px'
+            flexDirection: 'column',
+            height: '100%'
           }}>
-            <button 
-              onClick={() => setSelectedTeam('all')}
+            <h3 style={{ margin: '0 0 12px 0' }}>Employees</h3>
+            
+            {/* Search Input */}
+            <input
+              type="text"
+              placeholder="Search employees..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               style={{
-                backgroundColor: selectedTeam === 'all' ? '#333' : '#1a1a1a',
+                padding: '8px',
+                marginBottom: '12px',
+                backgroundColor: '#333',
                 border: '1px solid #444',
-                padding: '4px 8px',
                 borderRadius: '4px',
-                cursor: 'pointer',
-                color: 'white'
+                color: 'white',
+                outline: 'none'
               }}
-            >
-              All
-            </button>
-            <button 
-              onClick={() => setSelectedTeam('marketing')}
-              style={{
-                backgroundColor: selectedTeam === 'marketing' ? '#ffcdd2' : '#1a1a1a',
-                border: '1px solid #444',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                color: selectedTeam === 'marketing' ? '#000' : 'white'
-              }}
-            >
-              Marketing
-            </button>
-            <button 
-              onClick={() => setSelectedTeam('sales')}
-              style={{
-                backgroundColor: selectedTeam === 'sales' ? '#c8e6c9' : '#1a1a1a',
-                border: '1px solid #444',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                color: selectedTeam === 'sales' ? '#000' : 'white'
-              }}
-            >
-              Sales
-            </button>
-            <button 
-              onClick={() => setSelectedTeam('development')}
-              style={{
-                backgroundColor: selectedTeam === 'development' ? '#e3f2fd' : '#1a1a1a',
-                border: '1px solid #444',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                color: selectedTeam === 'development' ? '#000' : 'white'
-              }}
-            >
-              Development
-            </button>
-          </div>
-          <div style={{
-            display: 'flex',
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            gap: '8px',
-            alignItems: 'center'
-          }}>
-            {getFilteredEmployees(floorData, selectedTeam).map((employee, index) => (
-              <div
-                key={index}
-                className="draggable-employee"
-                draggable
-                onDragStart={(e) => {
-                  e.dataTransfer.setData('employee', JSON.stringify(employee));
-                }}
+            />
+
+            {/* Filter Buttons */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+              marginBottom: '12px'
+            }}>
+              <button 
+                onClick={() => setSelectedTeam('all')}
                 style={{
+                  backgroundColor: selectedTeam === 'all' ? '#333' : '#1a1a1a',
+                  border: '1px solid #444',
                   padding: '4px 8px',
-                  backgroundColor: TEAM_COLORS[employee.team] || '#f5f5f5',
-                  border: '1px solid #ddd',
                   borderRadius: '4px',
-                  cursor: 'move',
-                  userSelect: 'none',
-                  fontSize: '0.9em',
-                  color: '#000'  // Keep text dark for contrast
+                  cursor: 'pointer',
+                  color: 'white'
                 }}
               >
-                {employee.name}
-              </div>
-            ))}
-          </div>
-        </div>
+                All
+              </button>
+              <button 
+                onClick={() => setSelectedTeam('marketing')}
+                style={{
+                  backgroundColor: selectedTeam === 'marketing' ? '#ffcdd2' : '#1a1a1a',
+                  border: '1px solid #444',
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  color: selectedTeam === 'marketing' ? '#000' : 'white'
+                }}
+              >
+                Marketing
+              </button>
+              <button 
+                onClick={() => setSelectedTeam('sales')}
+                style={{
+                  backgroundColor: selectedTeam === 'sales' ? '#c8e6c9' : '#1a1a1a',
+                  border: '1px solid #444',
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  color: selectedTeam === 'sales' ? '#000' : 'white'
+                }}
+              >
+                Sales
+              </button>
+              <button 
+                onClick={() => setSelectedTeam('development')}
+                style={{
+                  backgroundColor: selectedTeam === 'development' ? '#e3f2fd' : '#1a1a1a',
+                  border: '1px solid #444',
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  color: selectedTeam === 'development' ? '#000' : 'white'
+                }}
+              >
+                Development
+              </button>
+            </div>
 
-        <div className="floor-container">
-          <FloorPlan
-            floorData={floorData}
-            onDeskDrop={handleDeskDrop}
-            onDeskClick={handleDeskClick}
-          />
+            {/* Scrollable Employee List */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+              overflowY: 'auto',
+              flex: 1,
+              msOverflowStyle: 'none',
+              scrollbarWidth: 'none',
+              '&::-webkit-scrollbar': {
+                display: 'none'
+              }
+            }}>
+              {getFilteredEmployees(floorData, selectedTeam, searchQuery).map((employee, index) => (
+                <div
+                  key={index}
+                  className="draggable-employee"
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('employee', JSON.stringify(employee));
+                  }}
+                  style={{
+                    padding: '8px',
+                    backgroundColor: TEAM_COLORS[employee.team] || '#f5f5f5',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    cursor: 'move',
+                    userSelect: 'none',
+                    fontSize: '0.9em',
+                    color: '#000'
+                  }}
+                >
+                  {employee.name}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Floor Plan Section */}
+          <div className="floor-container" style={{ 
+            flex: 1,
+            height: '100%',
+            overflow: 'hidden'  // Prevent scrolling
+          }}>
+            <FloorPlan
+              floorData={floorData}
+              onDeskDrop={handleFloorDrop}
+              onDeskClick={handleDeskClick}
+            />
+          </div>
         </div>
       </div>
     </DndProvider>
