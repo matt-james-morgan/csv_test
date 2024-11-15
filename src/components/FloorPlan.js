@@ -1,35 +1,55 @@
 import React, { useState, useEffect } from 'react';
 import Floor from './Floor';
 
+
+const getDominantTeamColor = (employees) => {
+  if (!employees || employees.length === 0) return '#1a1a1a';
+  
+  const teamCounts = employees.reduce((acc, emp) => {
+    acc[emp.team] = (acc[emp.team] || 0) + 1;
+    return acc;
+  }, {});
+
+  const dominantTeam = Object.entries(teamCounts)
+    .sort(([,a], [,b]) => b - a)[0][0];
+
+  // Define team colors with lower opacity for floor backgrounds
+  const TEAM_COLORS = {
+    marketing: 'rgba(255, 205, 210, 0.15)',  // Light red
+    sales: 'rgba(200, 230, 201, 0.15)',      // Light green
+    development: 'rgba(227, 242, 253, 0.15)'  // Light blue
+  };
+
+  return TEAM_COLORS[dominantTeam] || '#1a1a1a';
+};
+
 function FloorPlan({ floorData, onDeskDrop, onDeskClick }) {
   const [currentFloorIndex, setCurrentFloorIndex] = useState(0);
-  const [isFlipping, setIsFlipping] = useState(false);
   const [isVerticalView, setIsVerticalView] = useState(false);
 
-  const FLOOR_OFFSET = 30;
+  console.log('FloorPlan rendering with floorData:', floorData);
 
   useEffect(() => {
     const handleKeyPress = (e) => {
-      if (isFlipping) return;
-
-      if (e.key === 'ArrowUp' && currentFloorIndex < floorData.length - 1) {
-        setIsFlipping(true);
-        setCurrentFloorIndex(prev => prev + 1);
-        setTimeout(() => setIsFlipping(false), 500);
-      }
-      else if (e.key === 'ArrowDown' && currentFloorIndex > 0) {
-        setIsFlipping(true);
-        setCurrentFloorIndex(prev => prev - 1);
-        setTimeout(() => setIsFlipping(false), 500);
-      }
-      else if (e.key === 'Enter') {
+      if (e.key === 'Enter') {
         setIsVerticalView(prev => !prev);
+      } else if (e.key === 'ArrowUp' && currentFloorIndex < floorData.length - 1) {
+        setIsVerticalView(false);
+        setCurrentFloorIndex(prev => prev + 1);
+      } else if (e.key === 'ArrowDown' && currentFloorIndex > 0) {
+        setIsVerticalView(false);
+        setCurrentFloorIndex(prev => prev - 1);
       }
     };
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [currentFloorIndex, floorData.length, isFlipping]);
+  }, [currentFloorIndex, floorData.length]);
+
+  const handleDeskDrop = (employee, floorId) => {
+    console.log('Dropping employee:', employee, 'onto floor:', floorId);
+    onDeskDrop(employee, floorId);
+  };
 
   return (
     <div className="floor-plan-container" style={{
@@ -48,35 +68,35 @@ function FloorPlan({ floorData, onDeskDrop, onDeskClick }) {
         justifyContent: 'center',
         alignItems: 'center',
         transformStyle: 'preserve-3d',
-        transform: 'scale(0.7)'
+        transform: 'scale(0.8)'
       }}>
         {floorData.map((floor, index) => {
+          console.log(`in floordata.map ${JSON.stringify(floor.employees)}`);
           const isCurrent = index === currentFloorIndex;
           const relativeIndex = index - currentFloorIndex;
-          const verticalOffset = relativeIndex * FLOOR_OFFSET;
-          
-          // Calculate transforms based on view mode
-          const isometricTransform = `
-            rotateX(60deg) 
-            rotateZ(-45deg)
-            translate3d(0, 0, ${verticalOffset}px)
-          `;
-          
-          const verticalTransform = `
-            rotateX(0deg) 
-            rotateZ(0deg)
-            translate3d(0, 0, 0)
-            scale(1.2)
-          `;
+          const verticalOffset = relativeIndex * 30;
+          const floorNumber = index + 1;
+          const dominantColor = getDominantTeamColor(floor.employees);
           
           return (
             <div
               key={floor.floor_id}
               style={{
                 position: 'absolute',
-                width: '60%',
-                height: '60%',
-                transform: isCurrent && isVerticalView ? verticalTransform : isometricTransform,
+                width: '70%',
+                height: '70%',
+                transform: isCurrent && isVerticalView 
+                  ? `
+                    rotateX(0deg) 
+                    rotateZ(0deg)
+                    translate3d(0, -100px, 0)
+                    scale(1.2)
+                  ` 
+                  : `
+                    rotateX(60deg) 
+                    rotateZ(-45deg)
+                    translate3d(0, -50px, ${verticalOffset}px)
+                  `,
                 transition: 'all 0.5s ease-in-out',
                 opacity: isCurrent ? 1 : (isVerticalView ? 0 : 0.15),
                 pointerEvents: isCurrent ? 'auto' : 'none',
@@ -87,13 +107,15 @@ function FloorPlan({ floorData, onDeskDrop, onDeskClick }) {
             >
               <Floor
                 id={floor.floor_id}
+                floorNumber={floorNumber}
                 employees={floor.employees || []}
-                onDrop={onDeskDrop}
+                onDrop={handleDeskDrop}
                 onClick={onDeskClick}
+                isVerticalView={isVerticalView && isCurrent}
                 style={{
                   width: '100%',
                   height: '100%',
-                  backgroundColor: isCurrent ? '#1a1a1a' : '#222',
+                  backgroundColor: dominantColor,
                   border: `2px solid ${isCurrent ? '#444' : '#333'}`,
                   boxShadow: isCurrent ? '0 10px 20px rgba(0,0,0,0.3)' : 'none',
                   transition: 'all 0.5s ease-in-out'
@@ -103,50 +125,21 @@ function FloorPlan({ floorData, onDeskDrop, onDeskClick }) {
           );
         })}
       </div>
-      
-      {/* Floor Navigation UI */}
       <div style={{
         position: 'absolute',
         bottom: '20px',
-        display: 'flex',
-        gap: '10px',
-        alignItems: 'center',
-        zIndex: floorData.length + 1
+        width: '100%',
+        textAlign: 'center',
+        color: '#f5e6d3',
+        fontSize: '0.75em'
       }}>
-        <button
-          onClick={() => currentFloorIndex > 0 && setCurrentFloorIndex(prev => prev - 1)}
-          disabled={currentFloorIndex === 0 || isVerticalView}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: '#333',
-            border: 'none',
-            borderRadius: '4px',
-            color: 'white',
-            cursor: (currentFloorIndex === 0 || isVerticalView) ? 'not-allowed' : 'pointer',
-            opacity: isVerticalView ? 0.5 : 1
-          }}
-        >
-          ↓
-        </button>
-        <span style={{ color: 'white' }}>
-          Floor {currentFloorIndex + 1} of {floorData.length}
-          {isVerticalView && ' (Press Enter to return)'}
-        </span>
-        <button
-          onClick={() => currentFloorIndex < floorData.length - 1 && setCurrentFloorIndex(prev => prev - 1)}
-          disabled={currentFloorIndex === floorData.length - 1 || isVerticalView}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: '#333',
-            border: 'none',
-            borderRadius: '4px',
-            color: 'white',
-            cursor: (currentFloorIndex === floorData.length - 1 || isVerticalView) ? 'not-allowed' : 'pointer',
-            opacity: isVerticalView ? 0.5 : 1
-          }}
-        >
-          ↑
-        </button>
+        <div>
+          <span style={{ marginRight: '20px', color: '#fff', backgroundColor: 'transparent' }}>⬆️ Use Up Arrow to go up a floor</span>
+          <span style={{ color: '#fff', backgroundColor: 'transparent' }}>⬇️ Use Down Arrow to go down a floor</span>
+        </div>
+        <div style={{ marginTop: '10px' }}>
+          Press Enter to toggle floor view
+        </div>
       </div>
     </div>
   );

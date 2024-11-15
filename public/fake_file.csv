@@ -1,14 +1,22 @@
-floor,desk_id,employee_name,position_x,position_y,team
-1,A1,John Doe,10,20,marketing
-1,A2,Jane Smith,10,30,sales
-1,A3,Bob Johnson,10,40,development
-1,A4,Alice Williams,10,50,development
-1,A5,Mike Brown,10,60,development
-2,B1,Susan Davis,20,20,marketing
-2,B2,Tony Clark,20,30,sales
-2,B3,Linda Martinez,20,40,development
-2,B4,Mary Wilson,20,50,development
-3,C1,Rachel Green,30,20,marketing
-3,C2,Phoebe Buffay,30,30,sales
-3,C3,Ross Geller,30,40,development
-3,C4,Chandler Bing,30,50,development
+employee_name,team,floor,desk
+Rachel Green,Sales,1,1
+Monica Geller,Marketing,2,1
+Chandler Bing,Development,3,1
+Ross Geller,Development,1,2
+Joey Tribbiani,Sales,2,2
+Phoebe Buffay,Marketing,3,2
+Janice Hosenstein,Sales,1,3
+Gunther,Marketing,2,3
+Mike Hannigan,Development,3,3
+Emily Waltham,Sales,1,4
+Carol Willick,Marketing,2,4
+Susan Bunch,Development,3,4
+Richard Burke,Sales,1,5
+Estelle Leonard,Marketing,2,5
+Frank Buffay Jr.,Development,3,5
+Ben Geller,Sales,1,6
+Emma Geller-Green,Marketing,2,6
+Judy Geller,Development,3,6
+Jack Geller,Sales,1,1
+Nora Bing,Marketing,2,1
+Charles Bing,Development,3,1
