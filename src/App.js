@@ -39,16 +39,20 @@ function App() {
             .filter(emp => parseInt(emp.floor) === parseInt(floor.floor_id))
             .map(emp => ({
               name: emp.employee_name,
-              team: emp.team.toLowerCase()
+              team: emp.team.toLowerCase(),
+              desk: parseInt(emp.desk),
+              floor: parseInt(emp.floor)
             }))
         }));
+
+        console.log('Mapped floor data:', mappedData);
 
         setFloorData(mappedData);
         setAllEmployees(parsedEmployeeData.map(emp => ({
           name: emp.employee_name,
           team: emp.team.toLowerCase(),
-          desk: emp.desk,
-          floor: emp.floor
+          desk: parseInt(emp.desk),
+          floor: parseInt(emp.floor)
         })));
       } catch (error) {
         console.error('Error loading CSV:', error);
@@ -59,12 +63,22 @@ function App() {
   }, []);
 
   const handleDeskDrop = (employee, floorId) => {
+    console.log('Handling desk drop:', { employee, floorId });
+    
     setFloorData(prevFloorData => 
       prevFloorData.map(floor => {
         if (floor.floor_id === floorId) {
+          const existingDesks = floor.employees.map(emp => emp.desk);
+          const nextDesk = existingDesks.length > 0 ? Math.max(...existingDesks) + 1 : 1;
+
           return {
             ...floor,
-            employees: [...floor.employees, employee]
+            employees: [...floor.employees, {
+              name: employee.name,
+              team: employee.team,
+              desk: nextDesk,
+              floor: floorId
+            }]
           };
         }
         return floor;

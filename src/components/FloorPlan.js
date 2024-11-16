@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Floor from './Floor';
+import DeskView from './DeskView';
 
 
 const getDominantTeamColor = (employees) => {
@@ -26,6 +27,7 @@ const getDominantTeamColor = (employees) => {
 function FloorPlan({ floorData, onDeskDrop, onDeskClick }) {
   const [currentFloorIndex, setCurrentFloorIndex] = useState(0);
   const [isVerticalView, setIsVerticalView] = useState(false);
+  const [selectedFloor, setSelectedFloor] = useState(null);
 
   console.log('FloorPlan rendering with floorData:', floorData);
 
@@ -33,11 +35,14 @@ function FloorPlan({ floorData, onDeskDrop, onDeskClick }) {
     const handleKeyPress = (e) => {
       if (e.key === 'Enter') {
         setIsVerticalView(prev => !prev);
+        setSelectedFloor(null);
       } else if (e.key === 'ArrowUp' && currentFloorIndex < floorData.length - 1) {
         setIsVerticalView(false);
+        setSelectedFloor(null);
         setCurrentFloorIndex(prev => prev + 1);
       } else if (e.key === 'ArrowDown' && currentFloorIndex > 0) {
         setIsVerticalView(false);
+        setSelectedFloor(null);
         setCurrentFloorIndex(prev => prev - 1);
       }
     };
@@ -47,8 +52,34 @@ function FloorPlan({ floorData, onDeskDrop, onDeskClick }) {
   }, [currentFloorIndex, floorData.length]);
 
   const handleDeskDrop = (employee, floorId) => {
-    console.log('Dropping employee:', employee, 'onto floor:', floorId);
-    onDeskDrop(employee, floorId);
+    console.log('Before drop - Employee:', employee);
+    
+    // Find the floor and its current employees
+    const floor = floorData.find(f => f.floor_id === floorId);
+    const currentEmployees = floor?.employees || [];
+    
+    // Calculate next available desk number
+    const nextDesk = currentEmployees.length + 1;
+    
+    // Create employee object with desk number
+    const employeeWithDesk = {
+      ...employee,
+      desk: nextDesk,
+      floor: floorId
+    };
+
+    console.log('After assignment - Employee with desk:', employeeWithDesk);
+    onDeskDrop(employeeWithDesk, floorId);
+  };
+
+  const handleFloorClick = (floor) => {
+    console.log('Floor clicked:', floor);
+    console.log('Floor employees:', floor.employees);
+    setSelectedFloor(floor);
+  };
+
+  const closeDeskView = () => {
+    setSelectedFloor(null);
   };
 
   return (
@@ -60,6 +91,14 @@ function FloorPlan({ floorData, onDeskDrop, onDeskClick }) {
       alignItems: 'center',
       position: 'relative'
     }}>
+      {selectedFloor && (
+        <DeskView
+          floorName={`Floor ${selectedFloor.floor_id}`}
+          employees={selectedFloor.employees || []}
+          onClose={closeDeskView}
+        />
+      )}
+      
       <div style={{
         position: 'relative',
         width: '100%',
@@ -68,7 +107,9 @@ function FloorPlan({ floorData, onDeskDrop, onDeskClick }) {
         justifyContent: 'center',
         alignItems: 'center',
         transformStyle: 'preserve-3d',
-        transform: 'scale(0.8)'
+        transform: 'scale(0.8)',
+        opacity: selectedFloor ? 0.3 : 1,
+        pointerEvents: selectedFloor ? 'none' : 'auto'
       }}>
         {floorData.map((floor, index) => {
           console.log(`in floordata.map ${JSON.stringify(floor.employees)}`);
@@ -110,7 +151,7 @@ function FloorPlan({ floorData, onDeskDrop, onDeskClick }) {
                 floorNumber={floorNumber}
                 employees={floor.employees || []}
                 onDrop={handleDeskDrop}
-                onClick={onDeskClick}
+                onClick={() => handleFloorClick(floor)}
                 isVerticalView={isVerticalView && isCurrent}
                 style={{
                   width: '100%',
@@ -118,13 +159,15 @@ function FloorPlan({ floorData, onDeskDrop, onDeskClick }) {
                   backgroundColor: dominantColor,
                   border: `2px solid ${isCurrent ? '#444' : '#333'}`,
                   boxShadow: isCurrent ? '0 10px 20px rgba(0,0,0,0.3)' : 'none',
-                  transition: 'all 0.5s ease-in-out'
+                  transition: 'all 0.5s ease-in-out',
+                  cursor: 'pointer'
                 }}
               />
             </div>
           );
         })}
       </div>
+      
       <div style={{
         position: 'absolute',
         bottom: '20px',
@@ -138,7 +181,7 @@ function FloorPlan({ floorData, onDeskDrop, onDeskClick }) {
           <span style={{ color: '#fff', backgroundColor: 'transparent' }}>⬇️ Use Down Arrow to go down a floor</span>
         </div>
         <div style={{ marginTop: '10px' }}>
-          Press Enter to toggle floor view
+          Press Enter to toggle floor view or click a floor to see desk assignments
         </div>
       </div>
     </div>
