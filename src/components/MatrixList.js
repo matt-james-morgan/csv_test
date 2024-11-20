@@ -13,20 +13,45 @@ function MatrixList({ matrixData }) {
 
   return (
     <>
-      <div className="matrix-list-container">
-        <h2 style={{
-          color: '#f5e6d3',
-          marginTop: 0,
-          marginBottom: '20px',
-          fontSize: '1.2em'
+      <div className="matrix-list-container" style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: 'calc(100% - 40px)',
+        backgroundColor: '#1a1a1a',
+        width: '300px',
+        position: 'relative',
+        margin: '20px 0',
+        borderRadius: '8px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+      }}>
+        <div style={{
+          position: 'sticky',
+          top: 0,
+          backgroundColor: '#1a1a1a',
+          padding: '20px 15px',
+          borderBottom: '1px solid rgba(245, 230, 211, 0.1)',
+          zIndex: 2,
+          borderTopLeftRadius: '8px',
+          borderTopRightRadius: '8px'
         }}>
-          Teams
-        </h2>
+          <h2 style={{
+            color: '#f5e6d3',
+            margin: 0,
+            fontSize: '1.2em'
+          }}>
+            Teams
+          </h2>
+        </div>
 
         <div style={{
           display: 'flex',
           flexDirection: 'column',
-          gap: '10px'
+          gap: '10px',
+          padding: '15px',
+          overflowY: 'auto',
+          height: '100%',
+          position: 'relative',
+          zIndex: 1
         }}>
           {matrixData.map((team) => (
             <div

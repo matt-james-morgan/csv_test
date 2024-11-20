@@ -5,19 +5,16 @@ function Floor({
   id, 
   floorNumber, 
   groups = [], 
+  collaborationScore,
   onDrop, 
-  style, 
-  onKeyDown,
-  tabIndex 
+  onClear,
+  onShowDetail,
+  style 
 }) {
   const [selectedGroup, setSelectedGroup] = useState(null);
+
   const handleDrop = (e) => {
     e.preventDefault();
-    if (groups.length >= 2) {
-      console.log('Floor is at maximum capacity');
-      return;
-    }
-    
     try {
       const groupData = e.dataTransfer.getData('application/json');
       if (!groupData) {
@@ -33,121 +30,79 @@ function Floor({
   };
 
   const handleDragOver = (e) => {
-    if (groups.length < 2) {
-      e.preventDefault();
-    }
-  };
-
-  const getGroupColor = (score) => {
-    if (score >= 60) return 'rgba(76, 175, 80, 0.3)';
-    if (score >= 40) return 'rgba(255, 193, 7, 0.3)';
-    return 'rgba(244, 67, 54, 0.3)';
+    e.preventDefault();
   };
 
   return (
-    <>
-      <div
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onKeyDown={onKeyDown}
-        tabIndex={tabIndex}
-        style={{
-          padding: '20px',
-          borderRadius: '8px',
-          position: 'relative',
-          cursor: 'pointer',
-          minHeight: '120px',
-          opacity: groups.length >= 2 ? 0.7 : 1,
-          ...style
-        }}
-      >
+    <div
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          console.log('Enter pressed on floor:', id);
+          onShowDetail(id);
+        }
+      }}
+      tabIndex={0}
+      style={{
+        padding: '20px',
+        borderRadius: '8px',
+        position: 'relative',
+        cursor: 'pointer',
+        minHeight: '120px',
+        outline: 'none',
+        ...style
+      }}
+    >
+      <div style={{ 
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
         <div style={{ 
           color: '#f5e6d3', 
           fontSize: '1.2em',
-          position: 'absolute',
-          top: '10px',
-          left: '20px',
-          zIndex: 1
         }}>
-          Floor {floorNumber} ({groups.length}/2)
-        </div>
-
-        <div style={{
-          marginTop: '40px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px',
-          padding: '0 10px'
-        }}>
-          {groups.map((group, index) => (
-            <div
-              key={`${group.header}-${index}`}
-              style={{
-                backgroundColor: getGroupColor(group.avgScore),
-                padding: '12px',
-                borderRadius: '6px',
-                cursor: 'pointer'
-              }}
-              onClick={() => {
-                console.log('Group clicked:', group);
-                setSelectedGroup(group);
-              }}
-            >
-              <div style={{
-                color: '#f5e6d3',
-                fontWeight: 'bold',
-                marginBottom: '4px'
-              }}>
-                {group.header}
-              </div>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                color: '#f5e6d3',
-                fontSize: '0.9em',
-                opacity: 0.7
-              }}>
-                <span>People: {group.peopleCount}</span>
-                <span>Score: {group.avgScore}</span>
-              </div>
-            </div>
-          ))}
-          {groups.length === 0 && (
-            <div style={{
-              color: '#f5e6d3',
-              opacity: 0.5,
+          Floor {floorNumber} ({groups.length} groups)
+          {groups.length > 1 && (
+            <span style={{
+              marginLeft: '10px',
               fontSize: '0.9em',
-              width: '100%',
-              textAlign: 'center',
-              marginTop: '10px'
+              opacity: 0.8
             }}>
-              No groups assigned (0/2)
-            </div>
+              Avg. Collaboration: {collaborationScore}
+            </span>
           )}
         </div>
+        
+        {groups.length > 0 && (
+          <button
+            onClick={() => onClear(id)}
+            style={{
+              background: 'rgba(244, 67, 54, 0.3)',
+              border: 'none',
+              color: '#f5e6d3',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '0.8em',
+              transition: 'background-color 0.2s',
+            }}
+            onMouseOver={(e) => e.target.style.background = 'rgba(244, 67, 54, 0.5)'}
+            onMouseOut={(e) => e.target.style.background = 'rgba(244, 67, 54, 0.3)'}
+          >
+            Clear Floor
+          </button>
+        )}
       </div>
 
       {selectedGroup && (
-        <>
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.85)',
-              zIndex: 1000
-            }}
-            onClick={() => setSelectedGroup(null)}
-          />
-          <GroupModal
-            group={selectedGroup}
-            onClose={() => setSelectedGroup(null)}
-          />
-        </>
+        <GroupModal
+          group={selectedGroup}
+          onClose={() => setSelectedGroup(null)}
+        />
       )}
-    </>
+    </div>
   );
 }
 

@@ -4,6 +4,7 @@ import FloorPlan from './components/FloorPlan';
 import MatrixList from './components/MatrixList';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import GroupModal from './components/GroupModal';
 
 function App() {
   const [floorData, setFloorData] = useState(
@@ -13,6 +14,8 @@ function App() {
     }))
   );
   const [matrixData, setMatrixData] = useState([]);
+  const [collaborationData, setCollaborationData] = useState([]);
+  const [selectedGroup, setSelectedGroup] = useState(null);
 
   useEffect(() => {
     const loadCSVData = async () => {
@@ -45,6 +48,19 @@ function App() {
 
         console.log('Transformed Matrix Data:', transformedMatrixData);
         setMatrixData(transformedMatrixData);
+
+        // Load collaboration data
+        const collabResponse = await fetch(`${process.env.PUBLIC_URL}/Group Cross Collab.csv`);
+        const collabText = await collabResponse.text();
+        const parsedCollabData = Papa.parse(collabText, {
+          header: false,
+          skipEmptyLines: true
+        }).data;
+
+        // Remove the first column (People #) and first row (headers)
+        const cleanedData = parsedCollabData.slice(1).map(row => row.slice(2));
+        setCollaborationData(cleanedData);
+
       } catch (error) {
         console.error('Error loading CSV:', error);
       }
@@ -53,37 +69,77 @@ function App() {
     loadCSVData();
   }, []);
 
+  const getCollaborationScore = (group1, group2) => {
+    if (!collaborationData.length) return 0;
+    
+    // Extract group numbers from headers (assuming format "Group X")
+    const getGroupNumber = (header) => parseInt(header.replace('Group ', '')) - 1;
+    
+    const index1 = getGroupNumber(group1.header);
+    const index2 = getGroupNumber(group2.header);
+    
+    // Get score from the matrix (try both combinations as it's symmetric)
+    const score1 = parseInt(collaborationData[index1][index2]) || 0;
+    const score2 = parseInt(collaborationData[index2][index1]) || 0;
+    
+    return Math.max(score1, score2);
+  };
+
+  const calculateFloorScore = (groups) => {
+    if (groups.length <= 1) return 0;
+    
+    let totalScore = 0;
+    let pairCount = 0;
+
+    // Calculate scores between each pair of groups
+    for (let i = 0; i < groups.length; i++) {
+      for (let j = i + 1; j < groups.length; j++) {
+        totalScore += getCollaborationScore(groups[i], groups[j]);
+        pairCount++;
+      }
+    }
+
+    // Return average score
+    return pairCount > 0 ? Math.round(totalScore / pairCount) : 0;
+  };
+
   const handleFloorDrop = (group, floorId) => {
-    console.log('Handling group drop:', { group, floorId });
     setFloorData(prevFloorData => {
-      const newFloorData = prevFloorData.map(floor => {
+      return prevFloorData.map(floor => {
         if (floor.floor_id === floorId) {
-          // Check if floor already has 2 groups
-          if (floor.groups.length >= 2) {
-            console.log('Floor already has maximum groups');
-            return floor; // Don't add more groups
-          }
-          
-          // Check if group is already on this floor
           if (floor.groups.some(g => g.header === group.header)) {
-            console.log('Group already exists on this floor');
             return floor;
           }
 
-          console.log('Adding group to floor:', floorId);
+          const newGroups = [...floor.groups, group];
+          const collaborationScore = calculateFloorScore(newGroups);
+          
           return { 
             ...floor, 
-            groups: [...floor.groups, group] 
+            groups: newGroups,
+            collaborationScore
           };
         }
         return floor;
       });
-      console.log('Updated floor data:', newFloorData);
-      return newFloorData;
     });
   };
 
-  
+  const handleFloorClear = (floorId) => {
+    setFloorData(prevFloorData => {
+      return prevFloorData.map(floor => {
+        if (floor.floor_id === floorId) {
+          return {
+            ...floor,
+            groups: [],
+            collaborationScore: 0
+          };
+        }
+        return floor;
+      });
+    });
+  };
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="App" style={{ 
@@ -94,14 +150,24 @@ function App() {
         display: 'flex',
         flexDirection: 'column'
       }}>
-        <h1 style={{ 
-          margin: '10px 20px',
-          flex: '0 0 auto',
-          color: '#f5e6d3'
+        <header style={{
+          backgroundColor: '#1a1a1a',
+          padding: '15px 20px',
+          borderBottom: '1px solid rgba(245, 230, 211, 0.1)',
+          display: 'flex',
+          alignItems: 'center'
         }}>
-          Office Floor Plan
-        </h1>
-        
+          <h1 style={{
+            color: '#f5e6d3',
+            margin: 0,
+            fontSize: '1.5em',
+            fontWeight: '500',
+            letterSpacing: '1px'
+          }}>
+            Verinovi
+          </h1>
+        </header>
+
         <div style={{
           display: 'flex',
           flex: 1,
@@ -109,18 +175,26 @@ function App() {
           padding: '0 20px 20px 20px'
         }}>
           <MatrixList matrixData={matrixData} />
-
-          <div className="floor-container" style={{ 
-            flex: 1,
-            position: 'relative',
-            overflow: 'hidden'
+          <div style={{ 
+            flex: 1, 
+            position: 'relative', 
+            overflow: 'hidden' 
           }}>
             <FloorPlan
               floorData={floorData}
               handleFloorDrop={handleFloorDrop}
+              handleFloorClear={handleFloorClear}
+              onGroupSelect={setSelectedGroup}
             />
           </div>
         </div>
+
+        {selectedGroup && (
+          <GroupModal
+            group={selectedGroup}
+            onClose={() => setSelectedGroup(null)}
+          />
+        )}
       </div>
     </DndProvider>
   );
