@@ -9,7 +9,7 @@ function App() {
   const [floorData, setFloorData] = useState(
     Array.from({ length: 40 }, (_, index) => ({
       floor_id: index + 1,
-      employees: []
+      groups: []
     }))
   );
   const [matrixData, setMatrixData] = useState([]);
@@ -17,7 +17,6 @@ function App() {
   useEffect(() => {
     const loadCSVData = async () => {
       try {
-        // Load Matrix CSV
         const matrixResponse = await fetch(`${process.env.PUBLIC_URL}/Matrix.csv`);
         const matrixText = await matrixResponse.text();
         const parsedMatrixData = Papa.parse(matrixText, {
@@ -25,17 +24,26 @@ function App() {
           skipEmptyLines: true
         }).data;
 
-        // Transform matrix data
-        const headers = parsedMatrixData[0].slice(1); // Skip first column
+        // Get all data columns
+        const headers = parsedMatrixData[0].slice(1);
         const peopleCount = parsedMatrixData[1].slice(1);
+        const internalTraffic = parsedMatrixData[2].slice(1);
+        const orgTraffic = parsedMatrixData[3].slice(1);
+        const externalTraffic = parsedMatrixData[4].slice(1);
         const avgScores = parsedMatrixData[5].slice(1);
+        const scoresAbove10 = parsedMatrixData[6].slice(1);
 
         const transformedMatrixData = headers.map((header, index) => ({
           header,
           peopleCount: parseInt(peopleCount[index]) || 0,
-          avgScore: parseFloat(avgScores[index]) || 0
+          internalTraffic: parseFloat(internalTraffic[index]) || 0,
+          orgTraffic: parseFloat(orgTraffic[index]) || 0,
+          externalTraffic: parseFloat(externalTraffic[index]) || 0,
+          avgScore: parseFloat(avgScores[index]) || 0,
+          scoresAbove10: parseInt(scoresAbove10[index]) || 0
         }));
 
+        console.log('Transformed Matrix Data:', transformedMatrixData);
         setMatrixData(transformedMatrixData);
       } catch (error) {
         console.error('Error loading CSV:', error);
@@ -45,30 +53,37 @@ function App() {
     loadCSVData();
   }, []);
 
-  const handleDeskDrop = (team, floorId) => {
-    console.log('Handling team drop:', { team, floorId });
-    
-    setFloorData(prevFloorData => 
-      prevFloorData.map(floor => {
+  const handleFloorDrop = (group, floorId) => {
+    console.log('Handling group drop:', { group, floorId });
+    setFloorData(prevFloorData => {
+      const newFloorData = prevFloorData.map(floor => {
         if (floor.floor_id === floorId) {
-          const nextDesk = floor.employees.length + 1;
-          return {
-            ...floor,
-            employees: [...floor.employees, {
-              name: team.header,
-              team: team.header.toLowerCase(),
-              desk: nextDesk,
-              floor: floorId,
-              peopleCount: team.peopleCount,
-              avgScore: team.avgScore
-            }]
+          // Check if floor already has 2 groups
+          if (floor.groups.length >= 2) {
+            console.log('Floor already has maximum groups');
+            return floor; // Don't add more groups
+          }
+          
+          // Check if group is already on this floor
+          if (floor.groups.some(g => g.header === group.header)) {
+            console.log('Group already exists on this floor');
+            return floor;
+          }
+
+          console.log('Adding group to floor:', floorId);
+          return { 
+            ...floor, 
+            groups: [...floor.groups, group] 
           };
         }
         return floor;
-      })
-    );
+      });
+      console.log('Updated floor data:', newFloorData);
+      return newFloorData;
+    });
   };
 
+  
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="App" style={{ 
@@ -102,8 +117,7 @@ function App() {
           }}>
             <FloorPlan
               floorData={floorData}
-              onDeskDrop={handleDeskDrop}
-              onDeskClick={() => {}}
+              handleFloorDrop={handleFloorDrop}
             />
           </div>
         </div>
