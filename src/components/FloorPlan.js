@@ -91,6 +91,17 @@ function FloorPlan({ floorData, onDeskDrop, onDeskClick }) {
       alignItems: 'center',
       position: 'relative'
     }}>
+      <div style={{
+        position: 'absolute',
+        top: '20px',
+        left: '20px',
+        color: '#f5e6d3',
+        fontSize: '1.2em',
+        zIndex: 1000
+      }}>
+        Floor {currentFloorIndex + 1} of 40
+      </div>
+      
       {selectedFloor && (
         <DeskView
           floorName={`Floor ${selectedFloor.floor_id}`}
@@ -182,6 +193,9 @@ function FloorPlan({ floorData, onDeskDrop, onDeskClick }) {
         </div>
         <div style={{ marginTop: '10px' }}>
           Press Enter to toggle floor view or click a floor to see desk assignments
+        </div>
+        <div style={{ marginTop: '5px', color: '#999' }}>
+          {`${floorData.length - currentFloorIndex - 1} floors above, ${currentFloorIndex} floors below`}
         </div>
       </div>
     </div>

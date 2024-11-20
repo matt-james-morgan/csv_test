@@ -1,0 +1,27 @@
+.matrix-list-container {
+  width: 300px;
+  background-color: #1a1a1a;
+  padding: 20px;
+  border-radius: 8px;
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #333 #1a1a1a;
+}
+
+.matrix-list-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.matrix-list-container::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+.matrix-list-container::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+
+.matrix-list-container::-webkit-scrollbar-button {
+  display: none;
+} 

@@ -1,59 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import Papa from 'papaparse';
 import FloorPlan from './components/FloorPlan';
-import EmployeeList from './components/EmployeeList';
+import MatrixList from './components/MatrixList';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
-
-
 function App() {
-  const [floorData, setFloorData] = useState([
-    { floor_id: 1, employees: [] },
-    { floor_id: 2, employees: [] },
-    // ... more floors
-  ]);
-  const [allEmployees, setAllEmployees] = useState([]);
+  const [floorData, setFloorData] = useState(
+    Array.from({ length: 40 }, (_, index) => ({
+      floor_id: index + 1,
+      employees: []
+    }))
+  );
+  const [matrixData, setMatrixData] = useState([]);
 
   useEffect(() => {
     const loadCSVData = async () => {
       try {
-        const floorResponse = await fetch(`${process.env.PUBLIC_URL}/floors.csv`);
-        const floorText = await floorResponse.text();
-        const parsedFloorData = Papa.parse(floorText, {
-          header: true,
+        // Load Matrix CSV
+        const matrixResponse = await fetch(`${process.env.PUBLIC_URL}/Matrix.csv`);
+        const matrixText = await matrixResponse.text();
+        const parsedMatrixData = Papa.parse(matrixText, {
+          header: false,
           skipEmptyLines: true
         }).data;
 
-        const employeeResponse = await fetch(`${process.env.PUBLIC_URL}/fake_file.csv`);
-        const employeeText = await employeeResponse.text();
-        const parsedEmployeeData = Papa.parse(employeeText, {
-          header: true,
-          skipEmptyLines: true
-        }).data;
+        // Transform matrix data
+        const headers = parsedMatrixData[0].slice(1); // Skip first column
+        const peopleCount = parsedMatrixData[1].slice(1);
+        const avgScores = parsedMatrixData[5].slice(1);
 
-        const mappedData = parsedFloorData.map(floor => ({
-          floor_id: parseInt(floor.floor_id),
-          floor_name: floor.floor_name,
-          employees: parsedEmployeeData
-            .filter(emp => parseInt(emp.floor) === parseInt(floor.floor_id))
-            .map(emp => ({
-              name: emp.employee_name,
-              team: emp.team.toLowerCase(),
-              desk: parseInt(emp.desk),
-              floor: parseInt(emp.floor)
-            }))
+        const transformedMatrixData = headers.map((header, index) => ({
+          header,
+          peopleCount: parseInt(peopleCount[index]) || 0,
+          avgScore: parseFloat(avgScores[index]) || 0
         }));
 
-        console.log('Mapped floor data:', mappedData);
-
-        setFloorData(mappedData);
-        setAllEmployees(parsedEmployeeData.map(emp => ({
-          name: emp.employee_name,
-          team: emp.team.toLowerCase(),
-          desk: parseInt(emp.desk),
-          floor: parseInt(emp.floor)
-        })));
+        setMatrixData(transformedMatrixData);
       } catch (error) {
         console.error('Error loading CSV:', error);
       }
@@ -62,22 +45,22 @@ function App() {
     loadCSVData();
   }, []);
 
-  const handleDeskDrop = (employee, floorId) => {
-    console.log('Handling desk drop:', { employee, floorId });
+  const handleDeskDrop = (team, floorId) => {
+    console.log('Handling team drop:', { team, floorId });
     
     setFloorData(prevFloorData => 
       prevFloorData.map(floor => {
         if (floor.floor_id === floorId) {
-          const existingDesks = floor.employees.map(emp => emp.desk);
-          const nextDesk = existingDesks.length > 0 ? Math.max(...existingDesks) + 1 : 1;
-
+          const nextDesk = floor.employees.length + 1;
           return {
             ...floor,
             employees: [...floor.employees, {
-              name: employee.name,
-              team: employee.team,
+              name: team.header,
+              team: team.header.toLowerCase(),
               desk: nextDesk,
-              floor: floorId
+              floor: floorId,
+              peopleCount: team.peopleCount,
+              avgScore: team.avgScore
             }]
           };
         }
@@ -110,7 +93,7 @@ function App() {
           overflow: 'hidden',
           padding: '0 20px 20px 20px'
         }}>
-          <EmployeeList employees={allEmployees} />
+          <MatrixList matrixData={matrixData} />
 
           <div className="floor-container" style={{ 
             flex: 1,
