@@ -16,6 +16,10 @@ function App() {
   const [matrixData, setMatrixData] = useState([]);
   const [collaborationData, setCollaborationData] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
+  const [isIsometricView, setIsIsometricView] = useState(true);
+  const [isZoomedOut, setIsZoomedOut] = useState(false);
+  const [hoveredGroup, setHoveredGroup] = useState(null);
+  const [topCollaborators, setTopCollaborators] = useState([]);
 
   useEffect(() => {
     const loadCSVData = async () => {
@@ -26,6 +30,7 @@ function App() {
           header: false,
           skipEmptyLines: true
         }).data;
+
 
         // Get all data columns
         const headers = parsedMatrixData[0].slice(1);
@@ -72,35 +77,62 @@ function App() {
   const getCollaborationScore = (group1, group2) => {
     if (!collaborationData.length) return 0;
     
-    // Extract group numbers from headers (assuming format "Group X")
     const getGroupNumber = (header) => parseInt(header.replace('Group ', '')) - 1;
     
     const index1 = getGroupNumber(group1.header);
     const index2 = getGroupNumber(group2.header);
     
-    // Get score from the matrix (try both combinations as it's symmetric)
     const score1 = parseInt(collaborationData[index1][index2]) || 0;
     const score2 = parseInt(collaborationData[index2][index1]) || 0;
     
     return Math.max(score1, score2);
   };
 
-  const calculateFloorScore = (groups) => {
-    if (groups.length <= 1) return 0;
-    
-    let totalScore = 0;
-    let pairCount = 0;
-
-    // Calculate scores between each pair of groups
-    for (let i = 0; i < groups.length; i++) {
-      for (let j = i + 1; j < groups.length; j++) {
-        totalScore += getCollaborationScore(groups[i], groups[j]);
-        pairCount++;
-      }
+  const calculateGroupCollaborationScores = (groups) => {
+    if (groups.length <= 1) {
+      return groups.map(group => ({ ...group, collaborationScore: 0 }));
     }
 
-    // Return average score
-    return pairCount > 0 ? Math.round(totalScore / pairCount) : 0;
+    // Calculate weighted average for each group
+    return groups.map(currentGroup => {
+      let totalWeightedScore = 0;
+      let totalWeight = 0;
+
+      groups.forEach(otherGroup => {
+        if (currentGroup.header !== otherGroup.header) {
+          const score = getCollaborationScore(currentGroup, otherGroup);
+          const weight = otherGroup.peopleCount;
+          
+          totalWeightedScore += score * weight;
+          totalWeight += weight;
+        }
+      });
+
+      const weightedAverage = totalWeight > 0 
+        ? Math.round(totalWeightedScore / totalWeight)
+        : 0;
+
+      return {
+        ...currentGroup,
+        collaborationScore: weightedAverage
+      };
+    });
+  };
+
+  const calculateFloorScore = (groups) => {
+    if (groups.length <= 1) return 0;
+
+    let totalWeightedScore = 0;
+    let totalWeight = 0;
+
+    groups.forEach(group => {
+      totalWeightedScore += group.collaborationScore * group.peopleCount;
+      totalWeight += group.peopleCount;
+    });
+
+    return totalWeight > 0 
+      ? Math.round(totalWeightedScore / totalWeight)
+      : 0;
   };
 
   const handleFloorDrop = (group, floorId) => {
@@ -112,12 +144,13 @@ function App() {
           }
 
           const newGroups = [...floor.groups, group];
-          const collaborationScore = calculateFloorScore(newGroups);
+          const groupsWithScores = calculateGroupCollaborationScores(newGroups);
+          const floorScore = calculateFloorScore(groupsWithScores);
           
           return { 
             ...floor, 
-            groups: newGroups,
-            collaborationScore
+            groups: groupsWithScores,
+            collaborationScore: floorScore
           };
         }
         return floor;
@@ -140,6 +173,11 @@ function App() {
     });
   };
 
+  const handleGroupHover = (group, collaborators) => {
+    setHoveredGroup(group);
+    setTopCollaborators(collaborators);
+  };
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="App" style={{ 
@@ -155,7 +193,8 @@ function App() {
           padding: '15px 20px',
           borderBottom: '1px solid rgba(245, 230, 211, 0.1)',
           display: 'flex',
-          alignItems: 'center'
+          alignItems: 'center',
+          justifyContent: 'space-between'
         }}>
           <h1 style={{
             color: '#f5e6d3',
@@ -166,6 +205,59 @@ function App() {
           }}>
             Verinovi
           </h1>
+          
+          <div style={{
+            display: 'flex',
+            gap: '12px'
+          }}>
+            <button
+              onClick={() => setIsIsometricView(!isIsometricView)}
+              style={{
+                backgroundColor: 'rgba(245, 230, 211, 0.1)',
+                border: 'none',
+                color: '#f5e6d3',
+                padding: '8px 16px',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '0.9em',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(245, 230, 211, 0.2)'}
+              onMouseOut={(e) => e.target.style.backgroundColor = 'rgba(245, 230, 211, 0.1)'}
+            >
+              {isIsometricView ? '2D View' : '3D View'}
+            </button>
+
+            <button
+              onClick={() => {
+                setIsZoomedOut(!isZoomedOut);
+                if (!isZoomedOut) {
+                  // When entering "All Floors" view, force 2D view
+                  setIsIsometricView(false);
+                }
+              }}
+              style={{
+                backgroundColor: 'rgba(245, 230, 211, 0.1)',
+                border: 'none',
+                color: '#f5e6d3',
+                padding: '8px 16px',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '0.9em',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(245, 230, 211, 0.2)'}
+              onMouseOut={(e) => e.target.style.backgroundColor = 'rgba(245, 230, 211, 0.1)'}
+            >
+              {isZoomedOut ? 'Focus View' : 'All Floors'}
+            </button>
+          </div>
         </header>
 
         <div style={{
@@ -174,7 +266,11 @@ function App() {
           overflow: 'hidden',
           padding: '0 20px 20px 20px'
         }}>
-          <MatrixList matrixData={matrixData} />
+          <MatrixList 
+            matrixData={matrixData} 
+            collaborationData={collaborationData}
+            onHoverGroup={handleGroupHover}
+          />
           <div style={{ 
             flex: 1, 
             position: 'relative', 
@@ -185,6 +281,11 @@ function App() {
               handleFloorDrop={handleFloorDrop}
               handleFloorClear={handleFloorClear}
               onGroupSelect={setSelectedGroup}
+              isIsometricView={isIsometricView}
+              isZoomedOut={isZoomedOut}
+              setIsZoomedOut={setIsZoomedOut}
+              hoveredGroup={hoveredGroup}
+              topCollaborators={topCollaborators}
             />
           </div>
         </div>
@@ -201,3 +302,4 @@ function App() {
 }
 
 export default App;
+

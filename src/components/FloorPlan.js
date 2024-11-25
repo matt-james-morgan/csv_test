@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Floor from './Floor';
 import FloorDetail from './FloorDetail';
+import '../styles/FloorPlan.css';
+import '../styles/CustomScrollbar.css';
 
 const getDominantTeamColor = (groups) => {
   if (!groups || groups.length === 0) return '#1a1a1a';
@@ -22,9 +24,20 @@ const getDominantTeamColor = (groups) => {
   return GROUP_COLORS[dominantType] || '#1a1a1a';
 };
 
-function FloorPlan({ floorData, handleFloorDrop, handleFloorClear, onGroupSelect }) {
+function FloorPlan({ 
+  floorData, 
+  handleFloorDrop, 
+  handleFloorClear, 
+  onGroupSelect, 
+  isIsometricView,
+  isZoomedOut,
+  setIsZoomedOut,
+  hoveredGroup,
+  topCollaborators
+}) {
   const [currentFloorIndex, setCurrentFloorIndex] = useState(0);
   const [selectedFloor, setSelectedFloor] = useState(null);
+  
 
   useEffect(() => {
     const handleKeyPress = (e) => {
@@ -57,104 +70,114 @@ function FloorPlan({ floorData, handleFloorDrop, handleFloorClear, onGroupSelect
   };
 
   return (
-    <div className="floor-plan-container" style={{
-      perspective: '1500px',
-      height: '100%',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      position: 'relative'
-    }}>
-      <div style={{
-        position: 'absolute',
-        top: '20px',
-        left: '20px',
-        color: '#f5e6d3',
-        fontSize: '1.2em',
-        zIndex: 1000
-      }}>
-        Floor {currentFloorIndex + 1} of 40
-      </div>
-      
-      <div style={{
-        position: 'relative',
-        width: '100%',
-        height: '100%',
+    <div className={`floor-plan ${isZoomedOut ? 'zoomed-out' : ''} ${isIsometricView ? 'isometric' : ''}`}
+      style={{
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        transformStyle: 'preserve-3d',
-        transform: 'scale(0.8)',
-        opacity: selectedFloor ? 0.3 : 1,
-        pointerEvents: selectedFloor ? 'none' : 'auto'
+        width: '100%',
+        height: '100%'
       }}>
+      <div className={`floors-container ${isZoomedOut ? 'grid-view' : ''}`}
+        style={{
+          position: isZoomedOut ? 'static' : 'relative',
+          width: '100%',
+          height: '100%',
+          display: isZoomedOut ? 'grid' : 'block',
+          gridTemplateColumns: isZoomedOut ? 'repeat(3, 1fr)' : 'none',
+          gap: isZoomedOut ? '20px' : '0',
+          padding: isZoomedOut ? '20px' : '0',
+          overflowY: isZoomedOut ? 'auto' : '',
+          maxHeight: '100%',
+          left: isZoomedOut ? '0' : '150px',
+          top: isZoomedOut ? '0' : '50px',
+        }}>
         {floorData.map((floor, index) => {
-          const isCurrent = index === currentFloorIndex;
-          const relativeIndex = index - currentFloorIndex;
-          const verticalOffset = relativeIndex * 30;
-          const floorNumber = index + 1;
-          const dominantColor = getDominantTeamColor(floor.groups);
+          console.log('Rendering floor:', index + 1);
+          console.log('Floor data:', floor);
+          console.log('Floor groups:', floor.groups);
+          const isCurrent = isZoomedOut ? true : index === currentFloorIndex;
+          const relativeIndex = index - (isZoomedOut ? 0 : currentFloorIndex);
+          const verticalOffset = isIsometricView 
+            ? relativeIndex * (isZoomedOut ? 10 : 30)  // Smaller offset when zoomed out
+            : relativeIndex * (isZoomedOut ? 30 : 100); // Adjust vertical spacing
           
           return (
             <div
               key={floor.floor_id}
               style={{
-                position: 'absolute',
-                width: '70%',
-                height: '70%',
-                transform: `
-                  rotateX(60deg) 
-                  rotateZ(-45deg)
-                  translate3d(0, -50px, ${verticalOffset}px)
-                `,
+                position: isZoomedOut ? 'relative' : 'absolute',
+                width: isZoomedOut ? '100%' : '70%',
+                height: isZoomedOut ? '200px' : '70%',
+                transform: isZoomedOut 
+                  ? 'none' 
+                  : (isIsometricView 
+                      ? `rotateX(60deg) rotateZ(-45deg) translate3d(0, -50px, ${verticalOffset}px)`
+                      : `translateY(${verticalOffset}px)`),
                 transition: 'all 0.5s ease-in-out',
-                opacity: isCurrent ? 1 : 0.15,
+                opacity: isCurrent ? 1 : isZoomedOut ? 0.5 : isIsometricView ? 0.15 : 0,
                 pointerEvents: isCurrent ? 'auto' : 'none',
-                transformStyle: 'preserve-3d',
+                transformStyle: isIsometricView ? 'preserve-3d' : 'flat',
                 transformOrigin: 'center center',
                 zIndex: floorData.length - Math.abs(relativeIndex)
               }}
             >
               <Floor
                 id={floor.floor_id}
-                floorNumber={floorNumber}
+                floorNumber={index + 1}
                 groups={floor.groups || []}
                 collaborationScore={floor.collaborationScore}
                 onDrop={handleFloorDrop}
+                onClear={handleFloorClearWithDetailClose}
+                hoveredGroup={hoveredGroup}
+                topCollaborators={topCollaborators}
                 style={{
                   width: '100%',
                   height: '100%',
-                  backgroundColor: dominantColor,
+                  backgroundColor: getDominantTeamColor(floor.groups),
                   border: `2px solid ${isCurrent ? '#444' : '#333'}`,
                   boxShadow: isCurrent ? '0 10px 20px rgba(0,0,0,0.3)' : 'none',
                   transition: 'all 0.5s ease-in-out',
-                  cursor: 'pointer'
+                  cursor: isZoomedOut ? 'pointer' : 'default',
+                  padding: '10px',  // Add padding for group content
+                  display: 'flex',
+                  flexDirection: 'column'
                 }}
-                tabIndex={0}
-                onClear={handleFloorClearWithDetailClose}
-                onShowDetail={handleCloseDetail}
+                onClick={() => {
+                  if (isZoomedOut) {
+                    setCurrentFloorIndex(index);
+                    setIsZoomedOut(false);
+                  }
+                }}
               />
-            </div>
+                
+                
+                </div>
+              
+         
           );
         })}
       </div>
-      
-      <div style={{
-        position: 'absolute',
-        bottom: '20px',
-        width: '100%',
-        textAlign: 'center',
-        color: '#f5e6d3',
-        fontSize: '0.75em'
-      }}>
-        <div>
-          <span style={{ marginRight: '20px', color: '#fff', backgroundColor: 'transparent' }}>⬆️ Use Up Arrow to go up a floor</span>
-          <span style={{ color: '#fff', backgroundColor: 'transparent' }}>⬇️ Use Down Arrow to go down a floor</span>
+
+      {/* Navigation hints - hide when zoomed out */}
+      {!isZoomedOut && (
+        <div style={{
+          position: 'absolute',
+          bottom: '20px',
+          width: '100%',
+          textAlign: 'center',
+          color: '#f5e6d3',
+          fontSize: '0.75em'
+        }}>
+          <div>
+            <span style={{ marginRight: '20px' }}>⬆️ Use Up Arrow to go up a floor</span>
+            <span>⬇️ Use Down Arrow to go down a floor</span>
+          </div>
+          <div style={{ marginTop: '5px', color: '#999' }}>
+            {`${floorData.length - currentFloorIndex - 1} floors above, ${currentFloorIndex} floors below`}
+          </div>
         </div>
-        <div style={{ marginTop: '5px', color: '#999' }}>
-          {`${floorData.length - currentFloorIndex - 1} floors above, ${currentFloorIndex} floors below`}
-        </div>
-      </div>
+      )}
 
       {selectedFloor && (
         <FloorDetail

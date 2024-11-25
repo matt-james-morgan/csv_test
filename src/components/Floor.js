@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import GroupModal from './GroupModal';
+import Group from './Group';
+import '../styles/CustomScrollbar.css';
 
 function Floor({ 
   id, 
@@ -8,7 +10,8 @@ function Floor({
   collaborationScore,
   onDrop, 
   onClear,
-  onShowDetail,
+  hoveredGroup,
+  topCollaborators = [],
   style 
 }) {
   const [selectedGroup, setSelectedGroup] = useState(null);
@@ -33,31 +36,31 @@ function Floor({
     e.preventDefault();
   };
 
+  const isCollaborator = (group) => {
+    if (!hoveredGroup || !topCollaborators) return false;
+    return topCollaborators.some(collaborator => collaborator.header === group.header);
+  };
+
   return (
     <div
       onDrop={handleDrop}
       onDragOver={handleDragOver}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') {
-          console.log('Enter pressed on floor:', id);
-          onShowDetail(id);
-        }
-      }}
-      tabIndex={0}
       style={{
         padding: '20px',
         borderRadius: '8px',
         position: 'relative',
         cursor: 'pointer',
         minHeight: '120px',
-        outline: 'none',
+        display: 'flex',
+        flexDirection: 'column',
         ...style
       }}
     >
       <div style={{ 
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        marginBottom: '10px'
       }}>
         <div style={{ 
           color: '#f5e6d3', 
@@ -94,6 +97,26 @@ function Floor({
             Clear Floor
           </button>
         )}
+      </div>
+
+      <div style={{
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        flexGrow: 1,
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignContent: 'flex-start',
+        gap: '8px',
+        padding: '4px'
+      }}>
+        {groups.map((group) => (
+          <Group 
+            key={group.header} 
+            {...group} 
+            isHighlighted={isCollaborator(group)}
+            isHovered={hoveredGroup?.header === group.header}
+          />
+        ))}
       </div>
 
       {selectedGroup && (

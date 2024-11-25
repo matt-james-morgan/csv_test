@@ -1,12 +1,11 @@
-function GroupModal({ group, onClose }) {
-  const metrics = [
-    { label: 'People in Group', value: group.peopleCount },
-    { label: 'Internal Traffic', value: `${group.internalTraffic}%` },
-    { label: 'Organizational Traffic', value: `${group.orgTraffic}%` },
-    { label: 'External Traffic', value: `${group.externalTraffic}%` },
-    { label: 'Average CG Score', value: group.avgScore },
-    { label: 'Scores Above 10', value: group.scoresAbove10 }
-  ];
+import '../styles/CustomScrollbar.css';
+
+const GroupModal = ({ group, onClose, collaborators = [] }) => {
+  const maxTraffic = Math.max(group.internalTraffic, group.orgTraffic, group.externalTraffic);
+  
+  const getTrafficWidth = (traffic) => {
+    return (traffic / maxTraffic) * 100 + '%';
+  };
 
   return (
     <div style={{
@@ -15,118 +14,114 @@ function GroupModal({ group, onClose }) {
       left: '50%',
       transform: 'translate(-50%, -50%)',
       backgroundColor: '#2a2a2a',
-      padding: '30px',
-      borderRadius: '12px',
-      zIndex: 1100,
-      width: '90%',
-      maxWidth: '800px',
-      maxHeight: '90vh',
-      overflow: 'auto',
-      boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
+      padding: '20px',
+      borderRadius: '8px',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+      zIndex: 1001,
+      minWidth: '400px',
+      maxWidth: '600px',
+      maxHeight: '80vh',
+      overflowY: 'auto',
+      overflowX: 'hidden'
     }}>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '20px',
-        borderBottom: '1px solid rgba(245, 230, 211, 0.1)',
-        paddingBottom: '15px'
-      }}>
-        <h2 style={{ color: '#f5e6d3', margin: 0 }}>{group.header}</h2>
-        <button
-          onClick={onClose}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: '#f5e6d3',
-            cursor: 'pointer',
-            fontSize: '1.5em',
-            padding: '5px'
-          }}
-        >×</button>
-      </div>
-
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '20px',
-        padding: '10px'
-      }}>
-        {metrics.map(({ label, value }) => (
-          <div
-            key={label}
-            style={{
-              backgroundColor: '#1a1a1a',
-              padding: '15px',
-              borderRadius: '8px'
-            }}
-          >
-            <div style={{
-              color: '#f5e6d3',
-              opacity: 0.7,
-              fontSize: '0.9em',
-              marginBottom: '5px'
-            }}>
-              {label}
-            </div>
-            <div style={{
-              color: '#f5e6d3',
-              fontSize: '1.2em',
-              fontWeight: 'bold'
-            }}>
-              {value}
-            </div>
+      <h2 style={{ color: '#f5e6d3', marginTop: 0 }}>{group.header}</h2>
+      
+      <div style={{ color: '#f5e6d3', marginBottom: '20px' }}>
+        <div>People: {group.peopleCount}</div>
+        <div>Average Score: {group.avgScore}</div>
+        <div>Scores Above 10: {group.scoresAbove10}</div>
+        
+        {/* Traffic Visualization */}
+        <div style={{ marginTop: '15px' }}>
+          <h3 style={{ fontSize: '1em', marginBottom: '10px' }}>Traffic Distribution</h3>
+          <div style={{ marginBottom: '10px' }}>
+            <div style={{ marginBottom: '5px' }}>Internal: {group.internalTraffic}%</div>
+            <div style={{ 
+              height: '20px', 
+              backgroundColor: 'rgba(76, 175, 80, 0.3)',
+              width: getTrafficWidth(group.internalTraffic),
+              borderRadius: '4px',
+              transition: 'width 0.3s ease'
+            }} />
           </div>
-        ))}
+          <div style={{ marginBottom: '10px' }}>
+            <div style={{ marginBottom: '5px' }}>Organizational: {group.orgTraffic}%</div>
+            <div style={{ 
+              height: '20px', 
+              backgroundColor: 'rgba(255, 193, 7, 0.3)',
+              width: getTrafficWidth(group.orgTraffic),
+              borderRadius: '4px',
+              transition: 'width 0.3s ease'
+            }} />
+          </div>
+          <div style={{ marginBottom: '10px' }}>
+            <div style={{ marginBottom: '5px' }}>External: {group.externalTraffic}%</div>
+            <div style={{ 
+              height: '20px', 
+              backgroundColor: 'rgba(244, 67, 54, 0.3)',
+              width: getTrafficWidth(group.externalTraffic),
+              borderRadius: '4px',
+              transition: 'width 0.3s ease'
+            }} />
+          </div>
+        </div>
       </div>
 
-      <div style={{
+      {/* Collaborators Section */}
+      <div style={{ 
         marginTop: '20px',
-        padding: '15px',
-        backgroundColor: '#1a1a1a',
-        borderRadius: '8px'
+        borderTop: '1px solid rgba(245, 230, 211, 0.1)',
+        paddingTop: '20px'
       }}>
-        <div style={{
-          color: '#f5e6d3',
-          opacity: 0.7,
-          marginBottom: '10px'
+        <h3 style={{ 
+          color: '#f5e6d3', 
+          fontSize: '1.1em', 
+          marginBottom: '15px' 
         }}>
-          Traffic Distribution
-        </div>
-        <div style={{
+          Top Collaborators
+        </h3>
+        <div style={{ 
           display: 'flex',
-          height: '20px',
-          borderRadius: '10px',
-          overflow: 'hidden'
+          flexDirection: 'column',
+          gap: '8px'
         }}>
-          <div style={{
-            width: `${group.internalTraffic}%`,
-            backgroundColor: 'rgba(76, 175, 80, 0.5)'
-          }} />
-          <div style={{
-            width: `${group.orgTraffic}%`,
-            backgroundColor: 'rgba(33, 150, 243, 0.5)'
-          }} />
-          <div style={{
-            width: `${group.externalTraffic}%`,
-            backgroundColor: 'rgba(244, 67, 54, 0.5)'
-          }} />
-        </div>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginTop: '10px',
-          fontSize: '0.8em',
-          color: '#f5e6d3',
-          opacity: 0.7
-        }}>
-          <span>Internal</span>
-          <span>Organizational</span>
-          <span>External</span>
+          {collaborators.map((collaborator) => (
+            <div
+              key={collaborator.header}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                color: '#f5e6d3',
+                padding: '8px',
+                backgroundColor: 'rgba(245, 230, 211, 0.05)',
+                borderRadius: '4px'
+              }}
+            >
+              <span>{collaborator.header}</span>
+              <span>Collaboration Score: {collaborator.collaborationScore}</span>
+            </div>
+          ))}
         </div>
       </div>
+
+      <button
+        onClick={onClose}
+        style={{
+          position: 'absolute',
+          top: '15px',
+          right: '15px',
+          background: 'none',
+          border: 'none',
+          color: '#f5e6d3',
+          cursor: 'pointer',
+          fontSize: '1.2em',
+          padding: '5px'
+        }}
+      >
+        ✕
+      </button>
     </div>
   );
-}
+};
 
 export default GroupModal; 

@@ -1,4 +1,5 @@
 import React from 'react';
+import '../styles/CustomScrollbar.css';
 
 
 function FloorDetail({ floor, onClose, onClear, onGroupSelect }) {
@@ -15,29 +16,32 @@ function FloorDetail({ floor, onClose, onClear, onGroupSelect }) {
       left: '50%',
       transform: 'translate(-50%, -50%)',
       backgroundColor: '#1a1a1a',
-      padding: '20px',
-      borderRadius: '8px',
-      width: '60%',
-      maxHeight: '70vh',
+      padding: '30px',
+      borderRadius: '12px',
+      width: '80%',
+      height: '80vh',
       overflow: 'auto',
-      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+      overflowX: 'hidden',
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.24)',
       zIndex: 1000
     }}>
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: '20px'
+        marginBottom: '30px',
+        borderBottom: '1px solid rgba(245, 230, 211, 0.1)',
+        paddingBottom: '20px'
       }}>
         <h2 style={{ 
           color: '#f5e6d3',
           margin: 0,
-          fontSize: '1.2em'
+          fontSize: '1.4em'
         }}>
           Floor {floor.floor_id} ({floor.groups.length} groups)
           {floor.groups.length > 1 && (
             <span style={{
-              marginLeft: '10px',
+              marginLeft: '15px',
               fontSize: '0.8em',
               opacity: 0.8
             }}>
@@ -53,11 +57,11 @@ function FloorDetail({ floor, onClose, onClear, onGroupSelect }) {
                 background: 'rgba(244, 67, 54, 0.3)',
                 border: 'none',
                 color: '#f5e6d3',
-                padding: '6px 12px',
-                borderRadius: '4px',
+                padding: '8px 16px',
+                borderRadius: '6px',
                 cursor: 'pointer',
-                marginRight: '10px',
-                fontSize: '0.8em',
+                marginRight: '15px',
+                fontSize: '0.9em',
                 transition: 'background-color 0.2s',
               }}
               onMouseOver={(e) => e.target.style.background = 'rgba(244, 67, 54, 0.5)'}
@@ -72,10 +76,10 @@ function FloorDetail({ floor, onClose, onClear, onGroupSelect }) {
               background: 'rgba(255, 255, 255, 0.1)',
               border: 'none',
               color: '#f5e6d3',
-              padding: '6px 12px',
-              borderRadius: '4px',
+              padding: '8px 16px',
+              borderRadius: '6px',
               cursor: 'pointer',
-              fontSize: '0.8em',
+              fontSize: '0.9em',
               transition: 'background-color 0.2s',
             }}
             onMouseOver={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.2)'}
@@ -88,9 +92,9 @@ function FloorDetail({ floor, onClose, onClear, onGroupSelect }) {
 
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-        gap: '15px',
-        padding: '15px 0'
+        gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+        gap: '20px',
+        padding: '20px 0'
       }}>
         {floor.groups.map((group, index) => (
           <div
@@ -98,20 +102,17 @@ function FloorDetail({ floor, onClose, onClear, onGroupSelect }) {
             onClick={() => onGroupSelect(group)}
             style={{
               backgroundColor: getGroupColor(group.avgScore),
-              padding: '12px',
-              borderRadius: '6px',
+              padding: '20px',
+              borderRadius: '8px',
               cursor: 'pointer',
-              transition: 'transform 0.2s',
-              ':hover': {
-                transform: 'scale(1.02)'
-              }
+              transition: 'all 0.2s ease-in-out'
             }}
           >
             <div style={{
               color: '#f5e6d3',
               fontWeight: 'bold',
-              marginBottom: '6px',
-              fontSize: '1em'
+              marginBottom: '10px',
+              fontSize: '1.1em'
             }}>
               {group.header}
             </div>
@@ -119,11 +120,12 @@ function FloorDetail({ floor, onClose, onClear, onGroupSelect }) {
               display: 'flex',
               justifyContent: 'space-between',
               color: '#f5e6d3',
-              fontSize: '0.8em',
+              fontSize: '0.9em',
               opacity: 0.7
             }}>
               <span>People: {group.peopleCount}</span>
               <span>Score: {group.avgScore}</span>
+              <span>Collaboration: {group.collaborationScore}</span>
             </div>
           </div>
         ))}
