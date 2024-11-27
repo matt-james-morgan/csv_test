@@ -1,0 +1,4 @@
+
+.zoomed-out > :last-child {
+    margin-bottom: 20px; /* Adds margin below the last item */
+}

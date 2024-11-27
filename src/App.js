@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Papa from 'papaparse';
 import FloorPlan from './components/FloorPlan';
 import MatrixList from './components/MatrixList';
+import CompareFloors from './components/CompareFloors';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import GroupModal from './components/GroupModal';
@@ -20,6 +21,7 @@ function App() {
   const [isZoomedOut, setIsZoomedOut] = useState(false);
   const [hoveredGroup, setHoveredGroup] = useState(null);
   const [topCollaborators, setTopCollaborators] = useState([]);
+  const [showCompare, setShowCompare] = useState(false);
 
   useEffect(() => {
     const loadCSVData = async () => {
@@ -81,6 +83,11 @@ function App() {
     
     const index1 = getGroupNumber(group1.header);
     const index2 = getGroupNumber(group2.header);
+    
+    if (index1 < 0 || index1 >= collaborationData.length || index2 < 0 || index2 >= collaborationData.length) {
+      console.warn(`Invalid group indices: ${index1}, ${index2}`);
+      return 0;
+    }
     
     const score1 = parseInt(collaborationData[index1][index2]) || 0;
     const score2 = parseInt(collaborationData[index2][index1]) || 0;
@@ -235,7 +242,6 @@ function App() {
               onClick={() => {
                 setIsZoomedOut(!isZoomedOut);
                 if (!isZoomedOut) {
-                  // When entering "All Floors" view, force 2D view
                   setIsIsometricView(false);
                 }
               }}
@@ -257,6 +263,27 @@ function App() {
             >
               {isZoomedOut ? 'Focus View' : 'All Floors'}
             </button>
+
+            <button
+              onClick={() => setShowCompare(true)}
+              style={{
+                backgroundColor: 'rgba(245, 230, 211, 0.1)',
+                border: 'none',
+                color: '#f5e6d3',
+                padding: '8px 16px',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '0.9em',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(245, 230, 211, 0.2)'}
+              onMouseOut={(e) => e.target.style.backgroundColor = 'rgba(245, 230, 211, 0.1)'}
+            >
+              Compare
+            </button>
           </div>
         </header>
 
@@ -274,19 +301,27 @@ function App() {
           <div style={{ 
             flex: 1, 
             position: 'relative', 
-            overflow: 'hidden' 
+            padding: '20px', 
+            boxSizing: 'border-box'
           }}>
-            <FloorPlan
-              floorData={floorData}
-              handleFloorDrop={handleFloorDrop}
-              handleFloorClear={handleFloorClear}
-              onGroupSelect={setSelectedGroup}
-              isIsometricView={isIsometricView}
-              isZoomedOut={isZoomedOut}
-              setIsZoomedOut={setIsZoomedOut}
-              hoveredGroup={hoveredGroup}
-              topCollaborators={topCollaborators}
-            />
+            {showCompare ? (
+              <CompareFloors 
+                floorData={floorData} 
+                onClose={() => setShowCompare(false)}
+              />
+            ) : (
+              <FloorPlan
+                floorData={floorData}
+                handleFloorDrop={handleFloorDrop}
+                handleFloorClear={handleFloorClear}
+                onGroupSelect={setSelectedGroup}
+                isIsometricView={isIsometricView}
+                isZoomedOut={isZoomedOut}
+                setIsZoomedOut={setIsZoomedOut}
+                hoveredGroup={hoveredGroup}
+                topCollaborators={topCollaborators}
+              />
+            )}
           </div>
         </div>
 

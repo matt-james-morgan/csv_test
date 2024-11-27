@@ -107,8 +107,8 @@ function FloorPlan({
               key={floor.floor_id}
               style={{
                 position: isZoomedOut ? 'relative' : 'absolute',
-                width: isZoomedOut ? '100%' : '70%',
-                height: isZoomedOut ? '200px' : '70%',
+                width: isZoomedOut ? '90%' : '70%',
+                height: isZoomedOut ? '90%' : '70%',
                 transform: isZoomedOut 
                   ? 'none' 
                   : (isIsometricView 
