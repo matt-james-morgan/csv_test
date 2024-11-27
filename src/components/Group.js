@@ -7,7 +7,8 @@ const Group = ({
   collaborationScore, 
   isHighlighted,
   isHovered,
-  hoveredGroup 
+  hoveredGroup,
+  onDelete
 }) => {
   const getGroupColor = (score) => {
     if (score >= 60) return 'rgba(76, 175, 80, 0.3)';
@@ -27,12 +28,28 @@ const Group = ({
         boxShadow: isHighlighted || isHovered 
           ? '0 0 0 2px #f5e6d3, 0 2px 4px rgba(0,0,0,0.2)'
           : '0 2px 4px rgba(0,0,0,0.2)',
-        minWidth: '120px',
+        minWidth: '150px',
         transition: 'all 0.2s ease-in-out',
         opacity: hoveredGroup && !isHighlighted && !isHovered ? 0.3 : 1
       }}
     >
-      <div style={{ fontWeight: 'bold' }}>{header}</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ fontWeight: 'bold' }}>{header}</div>
+        <button 
+          onClick={onDelete}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#f5e6d3',
+            cursor: 'pointer',
+            fontSize: '1.2em',
+            lineHeight: '1',
+            marginLeft: '10px',
+          }}
+        >
+          &times;
+        </button>
+      </div>
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between',

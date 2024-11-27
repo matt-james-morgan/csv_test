@@ -12,7 +12,8 @@ function Floor({
   onClear,
   hoveredGroup,
   topCollaborators = [],
-  style 
+  style,
+  onGroupDelete
 }) {
   const [selectedGroup, setSelectedGroup] = useState(null);
 
@@ -39,6 +40,11 @@ function Floor({
   const isCollaborator = (group) => {
     if (!hoveredGroup || !topCollaborators) return false;
     return topCollaborators.some(collaborator => collaborator.header === group.header);
+  };
+
+  const handleDeleteGroup = (header) => {
+    const updatedGroups = groups.filter(group => group.header !== header);
+    onDrop(updatedGroups, id);
   };
 
   return (
@@ -107,7 +113,7 @@ function Floor({
         flexWrap: 'wrap',
         alignContent: 'flex-start',
         gap: '8px',
-        padding: '4px'
+        padding: '4px',
       }}>
         {groups.map((group) => (
           <Group 
@@ -115,6 +121,7 @@ function Floor({
             {...group} 
             isHighlighted={isCollaborator(group)}
             isHovered={hoveredGroup?.header === group.header}
+            onDelete={() => onGroupDelete(group.header)}
           />
         ))}
       </div>

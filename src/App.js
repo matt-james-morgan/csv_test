@@ -33,7 +33,6 @@ function App() {
           skipEmptyLines: true
         }).data;
 
-
         // Get all data columns
         const headers = parsedMatrixData[0].slice(1);
         const peopleCount = parsedMatrixData[1].slice(1);
@@ -68,6 +67,38 @@ function App() {
         const cleanedData = parsedCollabData.slice(1).map(row => row.slice(2));
         setCollaborationData(cleanedData);
 
+        // Randomly assign two groups to the first 20 floors
+        const assignedGroups = [];
+        for (let i = 0; i < Math.min(20, transformedMatrixData.length); i++) {
+          const floor = floorData[i];
+          const group1Index = Math.floor(Math.random() * transformedMatrixData.length);
+          let group2Index = Math.floor(Math.random() * transformedMatrixData.length);
+          
+          // Ensure group2Index is different from group1Index
+          while (group2Index === group1Index) {
+            group2Index = Math.floor(Math.random() * transformedMatrixData.length);
+          }
+
+          // Assign two random groups to the floor
+          assignedGroups.push({
+            floor_id: floor.floor_id,
+            groups: [transformedMatrixData[group1Index], transformedMatrixData[group2Index]]
+          });
+        }
+
+        // Update the first 20 floors with assigned groups
+        setFloorData(prevFloorData => {
+          return prevFloorData.map((floor, index) => {
+            if (index < assignedGroups.length) {
+              return {
+                ...floor,
+                groups: assignedGroups[index].groups
+              };
+            }
+            return floor;
+          });
+        });
+
       } catch (error) {
         console.error('Error loading CSV:', error);
       }
@@ -75,11 +106,12 @@ function App() {
 
     loadCSVData();
   }, []);
-
+  
+  const getGroupNumber = (header) => parseInt(header.replace('Group ', '')) - 1;
+  
   const getCollaborationScore = (group1, group2) => {
     if (!collaborationData.length) return 0;
     
-    const getGroupNumber = (header) => parseInt(header.replace('Group ', '')) - 1;
     
     const index1 = getGroupNumber(group1.header);
     const index2 = getGroupNumber(group2.header);
@@ -165,6 +197,15 @@ function App() {
     });
   };
 
+  const handleGroupDelete = (header) => {
+    setFloorData(prevFloorData => {
+      return prevFloorData.map(floor => ({
+        ...floor,
+        groups: floor.groups.filter(group => group.header !== header)
+      }));
+    });
+  };
+
   const handleFloorClear = (floorId) => {
     setFloorData(prevFloorData => {
       return prevFloorData.map(floor => {
@@ -218,22 +259,30 @@ function App() {
             gap: '12px'
           }}>
             <button
-              onClick={() => setIsIsometricView(!isIsometricView)}
+              onClick={() => {
+                if (isZoomedOut) {
+                  setIsZoomedOut(false);
+                }
+                if (!showCompare) {
+                  setIsIsometricView(!isIsometricView);
+                }
+              }}
+              disabled={isZoomedOut || showCompare}
               style={{
-                backgroundColor: 'rgba(245, 230, 211, 0.1)',
+                backgroundColor: (isZoomedOut || showCompare) ? 'rgba(100, 100, 100, 0.5)' : 'rgba(245, 230, 211, 0.1)',
                 border: 'none',
                 color: '#f5e6d3',
                 padding: '8px 16px',
                 borderRadius: '6px',
-                cursor: 'pointer',
+                cursor: (isZoomedOut || showCompare) ? 'not-allowed' : 'pointer',
                 fontSize: '0.9em',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
                 transition: 'background-color 0.2s'
               }}
-              onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(245, 230, 211, 0.2)'}
-              onMouseOut={(e) => e.target.style.backgroundColor = 'rgba(245, 230, 211, 0.1)'}
+              onMouseOver={(e) => !(isZoomedOut || showCompare) && (e.target.style.backgroundColor = 'rgba(245, 230, 211, 0.2)')}
+              onMouseOut={(e) => !(isZoomedOut || showCompare) && (e.target.style.backgroundColor = 'rgba(245, 230, 211, 0.1)')}
             >
               {isIsometricView ? '2D View' : '3D View'}
             </button>
@@ -244,6 +293,8 @@ function App() {
                 if (!isZoomedOut) {
                   setIsIsometricView(false);
                 }
+                // Close compare mode when switching to all floors
+                setShowCompare(false);
               }}
               style={{
                 backgroundColor: 'rgba(245, 230, 211, 0.1)',
@@ -265,7 +316,11 @@ function App() {
             </button>
 
             <button
-              onClick={() => setShowCompare(true)}
+              onClick={() => {
+                setShowCompare(true);
+                // Close zoomed out view when entering compare mode
+                setIsZoomedOut(false);
+              }}
               style={{
                 backgroundColor: 'rgba(245, 230, 211, 0.1)',
                 border: 'none',
@@ -308,6 +363,9 @@ function App() {
               <CompareFloors 
                 floorData={floorData} 
                 onClose={() => setShowCompare(false)}
+                getCollaborationScore={getCollaborationScore}
+                calculateGroupCollaborationScores={calculateGroupCollaborationScores}
+                getGroupNumber={getGroupNumber}
               />
             ) : (
               <FloorPlan
@@ -320,6 +378,7 @@ function App() {
                 setIsZoomedOut={setIsZoomedOut}
                 hoveredGroup={hoveredGroup}
                 topCollaborators={topCollaborators}
+                onGroupDelete={handleGroupDelete}
               />
             )}
           </div>

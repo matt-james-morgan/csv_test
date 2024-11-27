@@ -33,7 +33,8 @@ function FloorPlan({
   isZoomedOut,
   setIsZoomedOut,
   hoveredGroup,
-  topCollaborators
+  topCollaborators,
+  onGroupDelete
 }) {
   const [currentFloorIndex, setCurrentFloorIndex] = useState(0);
   const [selectedFloor, setSelectedFloor] = useState(null);
@@ -149,6 +150,7 @@ function FloorPlan({
                     setIsZoomedOut(false);
                   }
                 }}
+                onGroupDelete={onGroupDelete}
               />
                 
                 
