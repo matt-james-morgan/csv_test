@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 
-const CompareFloors = ({ floorData, onClose, calculateGroupCollaborationScores }) => {
+const CompareFloors = ({ floorData, onClose, getCollaborationScore }) => {
   const [selectedFloors, setSelectedFloors] = useState([]);
+
+  console.log(JSON.stringify(floorData, null, 2), "floorData");  
 
   const handleDrop = (e) => {
     e.preventDefault();
     const floorId = e.dataTransfer.getData('text/plain');
     const floor = floorData.find(f => f.floor_id === parseInt(floorId));
+    
     
     if (floor && !selectedFloors.includes(floor) && selectedFloors.length < 2) {
       setSelectedFloors(prev => [...prev, floor]);
@@ -30,7 +33,8 @@ const CompareFloors = ({ floorData, onClose, calculateGroupCollaborationScores }
 
     floor1.groups.forEach(group1 => {
       floor2.groups.forEach(group2 => {
-        const score = getCollaborationScore(group1, group2); // Assume this function exists
+        const score = calculateGroupCollaborationScore(group1, group2); // Assume this function exists
+        console.log(score, "score");
         totalScore += score;
         count++;
       });
@@ -39,14 +43,21 @@ const CompareFloors = ({ floorData, onClose, calculateGroupCollaborationScores }
     return count > 0 ? (totalScore / count).toFixed(2) : 0; // Return average score
   };
 
-  const getCollaborationScore = (floor1, floor2) => {
-    console.log(floor1, floor2);
-    // const groups = [...floor1.groups, ...floor2.groups];
-    // const avg = calculateGroupCollaborationScores(groups);
-    // Implement your logic to calculate collaboration score between two groups
-    // This is a placeholder; replace with actual logic
-    // return avg // Example: random score for demonstration
-  };
+  const calculateGroupCollaborationScore = (group1, group2) => {
+    
+
+    const score = getCollaborationScore(group1, group2); // Calculate score between the two groups
+    console.log(score, "score2");
+    const weight1 = group1.peopleCount;
+    const weight2 = group2.peopleCount;
+
+    // Calculate total weighted score
+    const totalWeightedScore = (score * weight1 + score * weight2) / (weight1 + weight2);
+
+    return totalWeightedScore; // Return the total weighted score as a single number
+};
+
+  
 
   return (
     <div style={{
@@ -123,7 +134,7 @@ const CompareFloors = ({ floorData, onClose, calculateGroupCollaborationScores }
         ))}
         {selectedFloors.length === 2 && (
           <div style={{ marginTop: '10px', color: '#f5e6d3' }}>
-            <h4>Collaboration Average: {calculateCollaborationAverage(selectedFloors[0], selectedFloors[1])}</h4>
+            <h4>Collaboration Average: {calculateCollaborationAverage()}</h4>
           </div>
         )}
       </div>

@@ -42,10 +42,7 @@ function Floor({
     return topCollaborators.some(collaborator => collaborator.header === group.header);
   };
 
-  const handleDeleteGroup = (header) => {
-    const updatedGroups = groups.filter(group => group.header !== header);
-    onDrop(updatedGroups, id);
-  };
+  
 
   return (
     <div
@@ -56,7 +53,7 @@ function Floor({
         borderRadius: '8px',
         position: 'relative',
         cursor: 'pointer',
-        minHeight: '120px',
+        minHeight: '240px',
         display: 'flex',
         flexDirection: 'column',
         ...style

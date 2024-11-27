@@ -5,6 +5,8 @@ import GroupModal from './GroupModal';
 function MatrixList({ matrixData, collaborationData, onHoverGroup }) {
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [hoveredGroup, setHoveredGroup] = useState(null);
+  const [checkedGroup, setCheckedGroup] = useState(null);
+  
 
   const getGroupColor = (score) => {
     if (score >= 60) return 'rgba(76, 175, 80, 0.3)';
@@ -107,7 +109,57 @@ function MatrixList({ matrixData, collaborationData, onHoverGroup }) {
           position: 'relative',
           zIndex: 1
         }}>
-          {matrixData.map((team) => (
+          {matrixData.map((team, index) => (
+            <div style={{ display: 'flex',  flexDirection: 'row', justifyContent: 'space-evenly', marginRight: '10px'  }}>
+              <input type="checkbox" style={{ 
+          marginRight: '10px', // Space between checkbox and card
+          width: '20px', // Set width for larger checkbox
+          height: '20px', // Set height for larger checkbox
+          appearance: 'none', // Remove default styling
+          backgroundColor: 'black', // Set background color
+          border: '2px solid grey', // Set border color and width
+          borderRadius: '3px', // Optional: rounded corners
+          cursor: 'pointer', // Change cursor on hover
+          alignSelf: 'center'
+        }} 
+        onClick={(e) => {
+          e.stopPropagation(); // Prevent triggering the card click
+          if (checkedGroup === team.header) {
+            setCheckedGroup(null);
+            e.currentTarget.style.backgroundColor = 'black';
+            e.currentTarget.style.backgroundImage = 'none';
+            
+            // Clear hover states and collaboration data
+            setHoveredGroup(null);
+            onHoverGroup(null, []);
+          } else {
+            // Uncheck previous checkbox if it exists
+            const prevCheckbox = document.querySelector(`input[type="checkbox"][data-group="${checkedGroup}"]`);
+            if (prevCheckbox) {
+              prevCheckbox.style.backgroundColor = 'black';
+              prevCheckbox.style.backgroundImage = 'none';
+            }
+            
+            // Set new checked group and update hover states
+            setCheckedGroup(team.header);
+            setHoveredGroup(team);
+            onHoverGroup(team, getTopCollaborators(team));
+            
+            // Apply checkmark style
+            e.currentTarget.style.backgroundColor = 'black';
+            e.currentTarget.style.backgroundImage = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='grey'%3E%3Cpath d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z'/%3E%3C/svg%3E")`;
+            e.currentTarget.style.backgroundSize = '80%';
+            e.currentTarget.style.backgroundPosition = 'center';
+            e.currentTarget.style.backgroundRepeat = 'no-repeat';
+          }
+       
+        
+
+          setHoveredGroup(team);
+          onHoverGroup(team, getTopCollaborators(team));
+        
+        }} 
+        data-group={team.header} />
             <div
               key={team.header}
               style={{
@@ -115,7 +167,8 @@ function MatrixList({ matrixData, collaborationData, onHoverGroup }) {
                 padding: '12px',
                 borderRadius: '6px',
                 cursor: 'grab',
-                position: 'relative'
+                position: 'relative',
+                width: '100%'
               }}
               draggable
               onDragStart={(e) => {
@@ -123,10 +176,16 @@ function MatrixList({ matrixData, collaborationData, onHoverGroup }) {
                 setHoveredGroup(null);
               }}
               onClick={() => setSelectedGroup(team)}
-              onMouseEnter={() => handleMouseEnter(team)}
+              onMouseEnter={() => {
+                if(!checkedGroup) {
+                  handleMouseEnter(team)
+                }
+              }}
               onMouseLeave={() => {
+                if(!checkedGroup) {
                 setHoveredGroup(null);
                 onHoverGroup(null, []);
+                }
               }}
             >
               <div style={{
@@ -146,6 +205,7 @@ function MatrixList({ matrixData, collaborationData, onHoverGroup }) {
                 <span>People: {team.peopleCount}</span>
                 <span>Score: {team.avgScore}</span>
               </div>
+            </div>
             </div>
           ))}
         </div>

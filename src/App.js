@@ -123,7 +123,8 @@ function App() {
     
     const score1 = parseInt(collaborationData[index1][index2]) || 0;
     const score2 = parseInt(collaborationData[index2][index1]) || 0;
-    
+    console.log(score1, score2, "score1, score2");
+    console.log(Math.max(score1, score2), "Math.max(score1, score2)");
     return Math.max(score1, score2);
   };
 
@@ -364,7 +365,6 @@ function App() {
                 floorData={floorData} 
                 onClose={() => setShowCompare(false)}
                 getCollaborationScore={getCollaborationScore}
-                calculateGroupCollaborationScores={calculateGroupCollaborationScores}
                 getGroupNumber={getGroupNumber}
               />
             ) : (
