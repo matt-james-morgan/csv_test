@@ -111,7 +111,7 @@ const CompareFloors = ({ floorData, onClose, getCollaborationScore }) => {
           backgroundColor: 'rgba(30, 30, 30, 0.8)',
         }}
       >
-        <h3>Drop Floors Here for Comparison</h3>
+        <h3>Drop Floors Here for Combined Collaboration Score</h3>
         {selectedFloors.length === 0 && <p>No floors selected for comparison.</p>}
         {selectedFloors.map(floor => (
           <div key={floor.floor_id} style={{ margin: '5px', color: '#f5e6d3' }}>

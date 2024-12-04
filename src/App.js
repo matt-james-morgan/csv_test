@@ -22,7 +22,8 @@ function App() {
   const [hoveredGroup, setHoveredGroup] = useState(null);
   const [topCollaborators, setTopCollaborators] = useState([]);
   const [showCompare, setShowCompare] = useState(false);
-
+  const [capacityWarning, setCapacityWarning] = useState(null);
+  
   useEffect(() => {
     const loadCSVData = async () => {
       try {
@@ -67,37 +68,6 @@ function App() {
         const cleanedData = parsedCollabData.slice(1).map(row => row.slice(2));
         setCollaborationData(cleanedData);
 
-        // Randomly assign two groups to the first 20 floors
-        const assignedGroups = [];
-        for (let i = 0; i < Math.min(20, transformedMatrixData.length); i++) {
-          const floor = floorData[i];
-          const group1Index = Math.floor(Math.random() * transformedMatrixData.length);
-          let group2Index = Math.floor(Math.random() * transformedMatrixData.length);
-          
-          // Ensure group2Index is different from group1Index
-          while (group2Index === group1Index) {
-            group2Index = Math.floor(Math.random() * transformedMatrixData.length);
-          }
-
-          // Assign two random groups to the floor
-          assignedGroups.push({
-            floor_id: floor.floor_id,
-            groups: [transformedMatrixData[group1Index], transformedMatrixData[group2Index]]
-          });
-        }
-
-        // Update the first 20 floors with assigned groups
-        setFloorData(prevFloorData => {
-          return prevFloorData.map((floor, index) => {
-            if (index < assignedGroups.length) {
-              return {
-                ...floor,
-                groups: assignedGroups[index].groups
-              };
-            }
-            return floor;
-          });
-        });
 
       } catch (error) {
         console.error('Error loading CSV:', error);
@@ -110,26 +80,38 @@ function App() {
   const getGroupNumber = (header) => parseInt(header.replace('Group ', '')) - 1;
   
   const getCollaborationScore = (group1, group2) => {
-    if (!collaborationData.length) return 0;
-    
+    if (!collaborationData.length) {
+      console.log('No collaboration data available');
+      return 0;
+    }
     
     const index1 = getGroupNumber(group1.header);
     const index2 = getGroupNumber(group2.header);
     
-    if (index1 < 0 || index1 >= collaborationData.length || index2 < 0 || index2 >= collaborationData.length) {
+    if (index1 < 0 || index1 >= collaborationData.length || 
+        index2 < 0 || index2 >= collaborationData.length) {
       console.warn(`Invalid group indices: ${index1}, ${index2}`);
       return 0;
     }
     
     const score1 = parseInt(collaborationData[index1][index2]) || 0;
     const score2 = parseInt(collaborationData[index2][index1]) || 0;
-    console.log(score1, score2, "score1, score2");
-    console.log(Math.max(score1, score2), "Math.max(score1, score2)");
+    
+    console.log('Collaboration scores:', {
+      group1: group1.header,
+      group2: group2.header,
+      index1,
+      index2,
+      score1,
+      score2
+    });
+    
     return Math.max(score1, score2);
   };
 
   const calculateGroupCollaborationScores = (groups) => {
     if (groups.length <= 1) {
+      console.log('Groups length <= 1:', groups);
       return groups.map(group => ({ ...group, collaborationScore: 0 }));
     }
 
@@ -143,6 +125,15 @@ function App() {
           const score = getCollaborationScore(currentGroup, otherGroup);
           const weight = otherGroup.peopleCount;
           
+          console.log('Collaboration calculation:', {
+            group1: currentGroup.header,
+            group2: otherGroup.header,
+            score,
+            weight,
+            totalWeightedScore,
+            totalWeight
+          });
+
           totalWeightedScore += score * weight;
           totalWeight += weight;
         }
@@ -152,6 +143,13 @@ function App() {
         ? Math.round(totalWeightedScore / totalWeight)
         : 0;
 
+      console.log('Final weighted average:', {
+        group: currentGroup.header,
+        weightedAverage,
+        totalWeightedScore,
+        totalWeight
+      });
+
       return {
         ...currentGroup,
         collaborationScore: weightedAverage
@@ -160,7 +158,10 @@ function App() {
   };
 
   const calculateFloorScore = (groups) => {
-    if (groups.length <= 1) return 0;
+    if (groups.length <= 1) {
+      console.log('Not enough groups for floor score:', groups);
+      return 0;
+    }
 
     let totalWeightedScore = 0;
     let totalWeight = 0;
@@ -170,16 +171,51 @@ function App() {
       totalWeight += group.peopleCount;
     });
 
-    return totalWeight > 0 
+    const finalScore = totalWeight > 0 
       ? Math.round(totalWeightedScore / totalWeight)
       : 0;
+
+    console.log('Floor score calculation:', {
+      groups: groups.map(g => g.header),
+      totalWeightedScore,
+      totalWeight,
+      finalScore
+    });
+
+    return finalScore;
+  };
+  const checkCapacity = (floor, newGroup) => {
+    const currentPeopleCount = floor.groups.reduce(
+      (sum, group) => sum + group.peopleCount,
+      0
+    );
+    const wouldExceedCapacity = currentPeopleCount + newGroup.peopleCount > 200;
+
+    if (wouldExceedCapacity) {
+      setCapacityWarning(
+        `Adding ${newGroup.header} would exceed floor capacity of 200 people`
+      );
+      setTimeout(() => setCapacityWarning(null), 3000);
+      return false;
+    }
+    return true;
   };
 
   const handleFloorDrop = (group, floorId) => {
+    const currentFloor = floorData.find(floor => floor.floor_id === floorId);
+    if (!checkCapacity(currentFloor, group)) {
+      return;
+    }
+
     setFloorData(prevFloorData => {
       return prevFloorData.map(floor => {
         if (floor.floor_id === floorId) {
           if (floor.groups.some(g => g.header === group.header)) {
+            return floor;
+          }
+
+          const currentPeopleCount = floor.groups.reduce((sum, g) => sum + g.peopleCount, 0);
+          if (currentPeopleCount + group.peopleCount > 200) {
             return floor;
           }
 
@@ -370,6 +406,7 @@ function App() {
             ) : (
               <FloorPlan
                 floorData={floorData}
+                setFloorData={setFloorData}
                 handleFloorDrop={handleFloorDrop}
                 handleFloorClear={handleFloorClear}
                 onGroupSelect={setSelectedGroup}
@@ -379,16 +416,37 @@ function App() {
                 hoveredGroup={hoveredGroup}
                 topCollaborators={topCollaborators}
                 onGroupDelete={handleGroupDelete}
+                capacityWarning={capacityWarning}
               />
             )}
           </div>
         </div>
 
         {selectedGroup && (
-          <GroupModal
-            group={selectedGroup}
-            onClose={() => setSelectedGroup(null)}
-          />
+          <div style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 1000,
+            maxHeight: '80vh',
+            overflowY: 'auto'
+          }}>
+            {Array.isArray(selectedGroup) ? (
+              selectedGroup.map(group => (
+                <GroupModal
+                  key={group.header}
+                  group={group}
+                  onClose={() => setSelectedGroup(null)}
+                />
+              ))
+            ) : (
+              <GroupModal
+                group={selectedGroup}
+                onClose={() => setSelectedGroup(null)}
+              />
+            )}
+          </div>
         )}
       </div>
     </DndProvider>

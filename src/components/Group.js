@@ -8,7 +8,8 @@ const Group = ({
   isHighlighted,
   isHovered,
   hoveredGroup,
-  onDelete
+  onDelete,
+  isZoomedOut
 }) => {
   const getGroupColor = (score) => {
     if (score >= 60) return 'rgba(76, 175, 80, 0.3)';
@@ -20,49 +21,45 @@ const Group = ({
     <div
       style={{
         backgroundColor: getGroupColor(avgScore),
-        padding: '12px',
-        margin: '4px',
+        padding: isZoomedOut ? '8px' : '12px',
         borderRadius: '6px',
-        display: 'inline-block',
         color: '#f5e6d3',
-        boxShadow: isHighlighted || isHovered 
-          ? '0 0 0 2px #f5e6d3, 0 2px 4px rgba(0,0,0,0.2)'
-          : '0 2px 4px rgba(0,0,0,0.2)',
-        minWidth: '150px',
-        transition: 'all 0.2s ease-in-out',
-        opacity: hoveredGroup && !isHighlighted && !isHovered ? 0.3 : 1
+        fontSize: isZoomedOut ? '0.8em' : '0.9em',
+        position: 'relative',
+        width: isZoomedOut ? '100%' : 'auto',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        transition: 'all 0.2s ease'
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div>
         <div style={{ fontWeight: 'bold' }}>{header}</div>
-        <button 
-          onClick={onDelete}
+        <div style={{ opacity: 0.8 }}>
+          {peopleCount} people • Score: {collaborationScore}
+        </div>
+      </div>
+      
+      {!isZoomedOut && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
           style={{
-            background: 'transparent',
+            background: 'none',
             border: 'none',
             color: '#f5e6d3',
             cursor: 'pointer',
-            fontSize: '1.2em',
-            lineHeight: '1',
-            marginLeft: '10px',
+            opacity: 0.6,
+            padding: '4px',
+            marginLeft: '8px'
           }}
+          onMouseOver={(e) => e.target.style.opacity = 1}
+          onMouseOut={(e) => e.target.style.opacity = 0.6}
         >
-          &times;
+          ✕
         </button>
-      </div>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between',
-        fontSize: '0.9em',
-        opacity: 0.7
-      }}>
-        <span>People: {peopleCount}</span>
-        <span>Score: {avgScore}</span>
-      </div>
-      {collaborationScore > 0 && (
-        <div style={{ fontSize: '0.9em', opacity: 0.7 }}>
-          Collab: {collaborationScore}
-        </div>
       )}
     </div>
   );
