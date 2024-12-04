@@ -38,7 +38,8 @@ function Floor({
   isZoomedOut,
   onFloorDragStart,
   onFloorDrop,
-  index
+  index,
+  opacity = 1,
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState(null);
@@ -122,7 +123,7 @@ function Floor({
         flexDirection: 'column',
         backgroundColor: getDominantTeamColor(groups),
         ...style,
-        opacity: 1,
+        opacity,
       }}
     >
       <div 

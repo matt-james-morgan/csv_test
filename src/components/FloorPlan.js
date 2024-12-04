@@ -37,7 +37,7 @@ function FloorPlan({
   topCollaborators,
   onGroupDelete,
   capacityWarning,
-  setFloorData
+  setFloorData,
 }) {
   const [currentFloorIndex, setCurrentFloorIndex] = useState(0);
   const [selectedFloor, setSelectedFloor] = useState(null);
@@ -48,7 +48,7 @@ function FloorPlan({
   };
 
   const handleFloorReorder = (fromIndex, toIndex) => {
-    setFloorData(prevData => {
+    setFloorData((prevData) => {
       const newData = [...prevData];
       const [movedFloor] = newData.splice(fromIndex, 1);
       newData.splice(toIndex, 0, movedFloor);
@@ -106,116 +106,115 @@ function FloorPlan({
         position: "relative",
       }}
     >
-      {capacityWarning && (
-        <div
-          style={{
-            position: "absolute",
-            top: "20px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            backgroundColor: "rgba(255, 87, 87, 0.9)",
-            color: "white",
-            padding: "10px 20px",
-            borderRadius: "4px",
-            zIndex: 1000,
-            animation: "fadeIn 0.3s ease-in-out",
-          }}
-        >
-          {capacityWarning}
-        </div>
-      )}
-      <div
-        className={`floors-container ${isZoomedOut ? "grid-view" : ""}`}
-        style={{
-          position: isZoomedOut ? "static" : "relative",
-          width: "100%",
-          height: "100%",
-          display: isZoomedOut ? "grid" : "block",
-          gridTemplateColumns: isZoomedOut ? "repeat(1, 1fr)" : "none",
-          gap: isZoomedOut ? "20px" : "0",
-          padding: isZoomedOut ? "20px" : "0",
-          overflowY: isZoomedOut ? "auto" : "",
-          maxHeight: "100%",
-          left: isZoomedOut ? "0" : "150px",
-          top: isZoomedOut ? "0" : "50px",
-        }}
-      >
-        {floorData.map((floor, index) => {
-          console.log("Rendering floor:", index + 1);
-          console.log("Floor data:", floor);
-          console.log("Floor groups:", floor.groups);
-          const isCurrent = isZoomedOut ? true : index === currentFloorIndex;
-          const relativeIndex = index - (isZoomedOut ? 0 : currentFloorIndex);
-          const verticalOffset = isIsometricView
-            ? relativeIndex * (isZoomedOut ? 10 : 30) // Smaller offset when zoomed out
-            : relativeIndex * (isZoomedOut ? 30 : 100); // Adjust vertical spacing
+      <div style={{
+        position: "relative",
+        width: "100%",
+        height: "100%",
+        transform: isIsometricView ? "scale(0.6) translateY(40%)" : "none",
+        transformOrigin: "center center",
+      }}>
+        {capacityWarning && (
+          <div
+            style={{
+              position: "absolute",
+              top: "20px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              backgroundColor: "rgba(255, 87, 87, 0.9)",
+              color: "white",
+              padding: "10px 20px",
+              borderRadius: "4px",
+              zIndex: 1000,
+              animation: "fadeIn 0.3s ease-in-out",
+            }}
+          >
+            {capacityWarning}
+          </div>
+        )}
+        <div className={`floors-container ${isZoomedOut ? "grid-view" : ""}`}>
+          {floorData.map((floor, index) => {
+            console.log("Rendering floor:", index + 1);
+            console.log("Floor data:", floor);
+            console.log("Floor groups:", floor.groups);
+            const isCurrent = isZoomedOut ? true : index === currentFloorIndex;
+            const relativeIndex = index - (isZoomedOut ? 0 : currentFloorIndex);
+            const verticalOffset = isIsometricView
+              ? relativeIndex * (isZoomedOut ? 10 : 40)
+              : relativeIndex * (isZoomedOut ? 30 : 100);
 
-          return (
-            <div
-              key={floor.floor_id}
-              style={{
-                position: isZoomedOut ? "relative" : "absolute",
-                width: isZoomedOut ? "90%" : "70%",
-                height: isZoomedOut ? "90%" : "70%",
-                transform: isZoomedOut
-                  ? "none"
-                  : isIsometricView
-                  ? `rotateX(60deg) rotateZ(-30deg) translate3d(0, -40px, ${verticalOffset}px)`
-                  : `translateY(${verticalOffset}px)`,
-                transition: "all 0.5s ease-in-out",
-                pointerEvents: isCurrent ? "auto" : "none",
-                transformStyle: isIsometricView ? "preserve-3d" : "flat",
-                transformOrigin: "center center",
-                zIndex: floorData.length - Math.abs(relativeIndex),
-              }}
-            >
-              <Floor
-                id={floor.floor_id}
-                index={index}
-                floorNumber={floor.floor_id}
-                groups={floor.groups || []}
-                collaborationScore={floor.collaborationScore}
-                onDrop={handleGroupDrop}
-                onClear={handleFloorClearWithDetailClose}
-                hoveredGroup={hoveredGroup}
-                topCollaborators={topCollaborators}
+            return (
+              <div
+                key={floor.floor_id}
                 style={{
-                  width: "100%",
-                  height: "100%",
-                  border: `2px solid ${isCurrent ? "#444" : "#333"}`,
-                  boxShadow: isCurrent ? "0 10px 20px rgba(0,0,0,0.3)" : "none",
+                  position: isZoomedOut ? "relative" : "absolute",
+                  width: isZoomedOut ? "90%" : "70%",
+                  height: isZoomedOut ? "90%" : "70%",
+                  transform: isZoomedOut
+                    ? "none"
+                    : isIsometricView
+                    ? `rotateX(60deg) rotateZ(-45deg) translate3d(0, -60px, ${
+                        verticalOffset * 2
+                      }px)`
+                    : `translateY(${verticalOffset}px)`,
                   transition: "all 0.5s ease-in-out",
-                  cursor: isZoomedOut ? "pointer" : "default",
-                  padding: "10px",
-                  display: "flex",
-                  flexDirection: "column",
+                  pointerEvents: isCurrent ? "auto" : "none",
+                  transformStyle: isIsometricView ? "preserve-3d" : "flat",
+                  transformOrigin: "center center",
+                  zIndex: floorData.length - Math.abs(relativeIndex),
+                  perspective: isIsometricView ? "1500px" : "none",
                 }}
-                onClick={() => {
-                  if (isZoomedOut) {
-                    setCurrentFloorIndex(index);
-                    setIsZoomedOut(false);
-                  }
-                }}
-                onGroupDelete={onGroupDelete}
-                isZoomedOut={isZoomedOut}
-                onFloorDragStart={handleFloorDragStart}
-                onFloorDrop={handleFloorReorder}
-              />
-            </div>
-          );
-        })}
+              >
+                <Floor
+                  id={floor.floor_id}
+                  index={index}
+                  floorNumber={floor.floor_id}
+                  groups={floor.groups || []}
+                  collaborationScore={floor.collaborationScore}
+                  onDrop={handleGroupDrop}
+                  onClear={handleFloorClearWithDetailClose}
+                  hoveredGroup={hoveredGroup}
+                  topCollaborators={topCollaborators}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    border: `2px solid ${isCurrent ? "#444" : "#333"}`,
+                    boxShadow: isCurrent ? "0 10px 20px rgba(0,0,0,0.3)" : "none",
+                    transition: "all 0.5s ease-in-out",
+                    cursor: isZoomedOut ? "pointer" : "default",
+                    padding: "10px",
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                  opacity={isIsometricView && !isZoomedOut ? (isCurrent ? 1 : 0.3) : 1}
+                  onClick={() => {
+                    if (isZoomedOut) {
+                      setCurrentFloorIndex(index);
+                      setIsZoomedOut(false);
+                    }
+                  }}
+                  onGroupDelete={onGroupDelete}
+                  isZoomedOut={isZoomedOut}
+                  onFloorDragStart={handleFloorDragStart}
+                  onFloorDrop={handleFloorReorder}
+                />
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Navigation hints - hide when zoomed out */}
       {!isZoomedOut && (
         <div
           style={{
-            position: "absolute",
+            position: "fixed",
             bottom: "20px",
+            left: "0",
             width: "100%",
             textAlign: "center",
             color: "#f5e6d3",
             fontSize: "0.75em",
+            zIndex: 1000,
+            pointerEvents: "none",
           }}
         >
           <div>

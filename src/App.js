@@ -9,7 +9,7 @@ import GroupModal from './components/GroupModal';
 
 function App() {
   const [floorData, setFloorData] = useState(
-    Array.from({ length: 40 }, (_, index) => ({
+    Array.from({ length: 8 }, (_, index) => ({
       floor_id: index + 1,
       groups: []
     }))
@@ -189,11 +189,11 @@ function App() {
       (sum, group) => sum + group.peopleCount,
       0
     );
-    const wouldExceedCapacity = currentPeopleCount + newGroup.peopleCount > 200;
+    const wouldExceedCapacity = currentPeopleCount + newGroup.peopleCount > 500;
 
     if (wouldExceedCapacity) {
       setCapacityWarning(
-        `Adding ${newGroup.header} would exceed floor capacity of 200 people`
+        `Adding ${newGroup.header} would exceed floor capacity of 500 people`
       );
       setTimeout(() => setCapacityWarning(null), 3000);
       return false;
