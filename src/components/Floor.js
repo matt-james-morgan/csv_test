@@ -40,6 +40,8 @@ function Floor({
   onFloorDrop,
   index,
   opacity = 1,
+  floorCollabScores = {},
+  floorData = [],
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState(null);
@@ -90,6 +92,12 @@ function Floor({
     e.preventDefault();
     const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
     onFloorDrop(fromIndex, index);
+  };
+
+  const getScoreColor = (score) => {
+    if (score > 10) return '#4CAF50';  // Green
+    if (score >= 5) return '#FFC107';   // Yellow
+    return '#F44336';                   // Red
   };
 
   return (
@@ -191,6 +199,49 @@ function Floor({
           </button>
         )}
       </div>
+
+      {isZoomedOut && isExpanded && (
+        <div style={{
+          marginTop: '10px',
+          padding: '10px',
+          backgroundColor: 'rgba(0,0,0,0.2)',
+          borderRadius: '4px',
+          color: '#f5e6d3'
+        }}>
+          {index > 0 && (
+            <div style={{ marginBottom: '8px' }}>
+              <span style={{ 
+                display: 'inline-block',
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                backgroundColor: getScoreColor(floorCollabScores[`${floorData[index-1].floor_id}-${id}`] || 0),
+                marginRight: '8px',
+
+              }} />
+              Floor above ({floorData[index-1].floor_id}) collaboration: {
+                floorCollabScores[`${floorData[index-1].floor_id}-${id}`] || 0
+              }
+            </div>
+          )}
+          
+          {index < floorData.length - 1 && (
+            <div>
+              <span style={{ 
+                display: 'inline-block',
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                backgroundColor: getScoreColor(floorCollabScores[`${id}-${floorData[index+1].floor_id}`] || 0),
+                marginRight: '8px'
+              }} />
+              Floor below ({floorData[index+1].floor_id}) collaboration: {
+                floorCollabScores[`${id}-${floorData[index+1].floor_id}`] || 0
+              }
+            </div>
+          )}
+        </div>
+      )}
 
       <div style={{
         overflowY: 'auto',

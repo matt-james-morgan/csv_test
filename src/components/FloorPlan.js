@@ -38,10 +38,12 @@ function FloorPlan({
   onGroupDelete,
   capacityWarning,
   setFloorData,
+  getCollaborationScore,
 }) {
   const [currentFloorIndex, setCurrentFloorIndex] = useState(0);
   const [selectedFloor, setSelectedFloor] = useState(null);
   const [draggedFloorId, setDraggedFloorId] = useState(null);
+  const [floorCollabScores, setFloorCollabScores] = useState({});
 
   const handleFloorDragStart = (floorId) => {
     setDraggedFloorId(floorId);
@@ -54,6 +56,30 @@ function FloorPlan({
       newData.splice(toIndex, 0, movedFloor);
       return newData;
     });
+  };
+
+  const calculateCollaborationAverage = (floor1, floor2) => {
+    if (!floor1?.groups.length || !floor2?.groups.length) return 0;
+
+    let totalScore = 0;
+    let count = 0;
+
+    floor1.groups.forEach(group1 => {
+      floor2.groups.forEach(group2 => {
+        const score = calculateGroupCollaborationScore(group1, group2);
+        totalScore += score;
+        count++;
+      });
+    });
+
+    return count > 0 ? Number((totalScore / count).toFixed(2)) : 0;
+  };
+
+  const calculateGroupCollaborationScore = (group1, group2) => {
+    const score = getCollaborationScore(group1, group2);
+    const weight1 = group1.peopleCount;
+    const weight2 = group2.peopleCount;
+    return (score * weight1 + score * weight2) / (weight1 + weight2);
   };
 
   useEffect(() => {
@@ -83,6 +109,28 @@ function FloorPlan({
     return () => window.removeEventListener("keydown", handleKeyPress);
   }, [currentFloorIndex, floorData, onGroupSelect]);
 
+  useEffect(() => {
+    if (!isZoomedOut) {
+      setFloorCollabScores({});
+      return;
+    }
+
+    const newScores = {};
+    floorData.forEach((floor, index) => {
+      // Calculate score with floor above
+      if (index > 0) {
+        const scoreWithAbove = calculateCollaborationAverage(floorData[index-1], floor);
+        newScores[`${floorData[index-1].floor_id}-${floor.floor_id}`] = scoreWithAbove;
+      }
+      // Calculate score with floor below
+      if (index < floorData.length - 1) {
+        const scoreWithBelow = calculateCollaborationAverage(floor, floorData[index + 1]);
+        newScores[`${floor.floor_id}-${floorData[index + 1].floor_id}`] = scoreWithBelow;
+      }
+    });
+    setFloorCollabScores(newScores);
+  }, [floorData, isZoomedOut, getCollaborationScore]);
+
   const handleCloseDetail = () => {
     setSelectedFloor(null);
   };
@@ -106,13 +154,15 @@ function FloorPlan({
         position: "relative",
       }}
     >
-      <div style={{
-        position: "relative",
-        width: "100%",
-        height: "100%",
-        transform: isIsometricView ? "scale(0.6) translateY(40%)" : "none",
-        transformOrigin: "center center",
-      }}>
+      <div
+        style={{
+          position: "relative",
+          width: "100%",
+          height: "100%",
+          transform: isIsometricView ? "scale(0.6) translateY(20%)" : "none",
+          transformOrigin: "center center",
+        }}
+      >
         {capacityWarning && (
           <div
             style={{
@@ -133,71 +183,82 @@ function FloorPlan({
         )}
         <div className={`floors-container ${isZoomedOut ? "grid-view" : ""}`}>
           {floorData.map((floor, index) => {
-            console.log("Rendering floor:", index + 1);
-            console.log("Floor data:", floor);
-            console.log("Floor groups:", floor.groups);
             const isCurrent = isZoomedOut ? true : index === currentFloorIndex;
             const relativeIndex = index - (isZoomedOut ? 0 : currentFloorIndex);
             const verticalOffset = isIsometricView
               ? relativeIndex * (isZoomedOut ? 10 : 40)
               : relativeIndex * (isZoomedOut ? 30 : 100);
 
+            if (!isIsometricView && !isZoomedOut && !isCurrent) {
+              return null;
+            }
+
             return (
-              <div
-                key={floor.floor_id}
-                style={{
-                  position: isZoomedOut ? "relative" : "absolute",
-                  width: isZoomedOut ? "90%" : "70%",
-                  height: isZoomedOut ? "90%" : "70%",
-                  transform: isZoomedOut
-                    ? "none"
-                    : isIsometricView
-                    ? `rotateX(60deg) rotateZ(-45deg) translate3d(0, -60px, ${
-                        verticalOffset * 2
-                      }px)`
-                    : `translateY(${verticalOffset}px)`,
-                  transition: "all 0.5s ease-in-out",
-                  pointerEvents: isCurrent ? "auto" : "none",
-                  transformStyle: isIsometricView ? "preserve-3d" : "flat",
-                  transformOrigin: "center center",
-                  zIndex: floorData.length - Math.abs(relativeIndex),
-                  perspective: isIsometricView ? "1500px" : "none",
-                }}
-              >
-                <Floor
-                  id={floor.floor_id}
-                  index={index}
-                  floorNumber={floor.floor_id}
-                  groups={floor.groups || []}
-                  collaborationScore={floor.collaborationScore}
-                  onDrop={handleGroupDrop}
-                  onClear={handleFloorClearWithDetailClose}
-                  hoveredGroup={hoveredGroup}
-                  topCollaborators={topCollaborators}
+              <React.Fragment key={floor.floor_id}>
+                <div
                   style={{
-                    width: "100%",
-                    height: "100%",
-                    border: `2px solid ${isCurrent ? "#444" : "#333"}`,
-                    boxShadow: isCurrent ? "0 10px 20px rgba(0,0,0,0.3)" : "none",
+                    position: isZoomedOut ? "relative" : "absolute",
+                    width: isZoomedOut ? "90%" : "70%",
+                    height: isZoomedOut ? "90%" : "70%",
+                    transform: isZoomedOut
+                      ? "none"
+                      : isIsometricView
+                      ? `rotateX(60deg) rotateZ(-45deg) translate3d(0, -60px, ${
+                          verticalOffset * 2
+                        }px)`
+                      : `translate(-50%, -50%)`,
                     transition: "all 0.5s ease-in-out",
-                    cursor: isZoomedOut ? "pointer" : "default",
-                    padding: "10px",
-                    display: "flex",
-                    flexDirection: "column",
+                    pointerEvents: isCurrent ? "auto" : "none",
+                    transformStyle: isIsometricView ? "preserve-3d" : "flat",
+                    transformOrigin: "center center",
+                    zIndex: floorData.length - Math.abs(relativeIndex),
+                    perspective: isIsometricView ? "1500px" : "none",
+                    left: isZoomedOut ? "5%" : isIsometricView ? "auto" : "50%",
+                    top: isIsometricView ? "auto" : "50%",
+                    marginBottom: isZoomedOut ? "20px" : "0",
                   }}
-                  opacity={isIsometricView && !isZoomedOut ? (isCurrent ? 1 : 0.3) : 1}
-                  onClick={() => {
-                    if (isZoomedOut) {
-                      setCurrentFloorIndex(index);
-                      setIsZoomedOut(false);
+                >
+                  <Floor
+                    id={floor.floor_id}
+                    index={index}
+                    floorNumber={floor.floor_id}
+                    groups={floor.groups || []}
+                    collaborationScore={floor.collaborationScore}
+                    onDrop={handleGroupDrop}
+                    onClear={handleFloorClearWithDetailClose}
+                    hoveredGroup={hoveredGroup}
+                    topCollaborators={topCollaborators}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      border: `2px solid ${isCurrent ? "#444" : "#333"}`,
+                      boxShadow: isCurrent
+                        ? "0 10px 20px rgba(0,0,0,0.3)"
+                        : "none",
+                      transition: "all 0.5s ease-in-out",
+                      cursor: isZoomedOut ? "pointer" : "default",
+                      padding: "10px",
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                    opacity={
+                      isIsometricView && !isZoomedOut ? (isCurrent ? 1 : 0.3) : 1
                     }
-                  }}
-                  onGroupDelete={onGroupDelete}
-                  isZoomedOut={isZoomedOut}
-                  onFloorDragStart={handleFloorDragStart}
-                  onFloorDrop={handleFloorReorder}
-                />
-              </div>
+                    onClick={() => {
+                      if (isZoomedOut) {
+                        setCurrentFloorIndex(index);
+                        setIsZoomedOut(false);
+                      }
+                    }}
+                    onGroupDelete={onGroupDelete}
+                    isZoomedOut={isZoomedOut}
+                    onFloorDragStart={handleFloorDragStart}
+                    onFloorDrop={handleFloorReorder}
+                    floorCollabScores={floorCollabScores}
+                    floorData={floorData}
+                  />
+                </div>
+              </React.Fragment>
             );
           })}
         </div>

@@ -189,7 +189,7 @@ function App() {
       (sum, group) => sum + group.peopleCount,
       0
     );
-    const wouldExceedCapacity = currentPeopleCount + newGroup.peopleCount > 500;
+    const wouldExceedCapacity = currentPeopleCount + newGroup.peopleCount > 300;
 
     if (wouldExceedCapacity) {
       setCapacityWarning(
@@ -417,6 +417,7 @@ function App() {
                 topCollaborators={topCollaborators}
                 onGroupDelete={handleGroupDelete}
                 capacityWarning={capacityWarning}
+                getCollaborationScore={getCollaborationScore}
               />
             )}
           </div>
