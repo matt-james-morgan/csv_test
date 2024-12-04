@@ -55,13 +55,18 @@ function Floor({
   const handleDrop = (e) => {
     e.preventDefault();
     try {
+      console.log('Drop event triggered on Floor');
       const groupData = e.dataTransfer.getData('application/json');
+      console.log('Group data from drop:', groupData);
+      
       if (!groupData) {
         console.error('No group data found in drop event');
         return;
       }
 
       const group = JSON.parse(groupData);
+      console.log('Parsed group data:', group);
+      console.log('Calling onDrop with:', { group, id });
       onDrop(group, id);
     } catch (error) {
       console.error('Error handling drop:', error);
@@ -85,12 +90,15 @@ function Floor({
 
   const handleFloorDrop = (e) => {
     if (!isZoomedOut) {
+      console.log('Not in zoomed out mode, handling as group drop');
       handleDrop(e);
       return;
     }
     
     e.preventDefault();
+    console.log('Floor reorder drop event triggered');
     const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+    console.log('Floor reorder from index:', fromIndex, 'to index:', index);
     onFloorDrop(fromIndex, index);
   };
 

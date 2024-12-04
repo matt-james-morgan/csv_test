@@ -80,42 +80,39 @@ function App() {
   const getGroupNumber = (header) => parseInt(header.replace('Group ', '')) - 1;
   
   const getCollaborationScore = (group1, group2) => {
-    if (!collaborationData.length) {
-      console.log('No collaboration data available');
+    if (!collaborationData || !Array.isArray(collaborationData) || 
+        !group1?.header || !group2?.header) {
+      console.warn('Invalid data for collaboration score calculation');
       return 0;
     }
     
-    const index1 = getGroupNumber(group1.header);
-    const index2 = getGroupNumber(group2.header);
-    
-    if (index1 < 0 || index1 >= collaborationData.length || 
-        index2 < 0 || index2 >= collaborationData.length) {
-      console.warn(`Invalid group indices: ${index1}, ${index2}`);
+    try {
+      const index1 = getGroupNumber(group1.header);
+      const index2 = getGroupNumber(group2.header);
+      
+      if (!collaborationData[index1] || !collaborationData[index2] ||
+          index1 < 0 || index2 < 0 || 
+          index1 >= collaborationData.length || 
+          index2 >= collaborationData.length) {
+        console.warn(`Out of bounds indices: ${index1}, ${index2}`);
+        return 0;
+      }
+      
+      const score1 = Number(collaborationData[index1][index2]) || 0;
+      const score2 = Number(collaborationData[index2][index1]) || 0;
+      
+      return Math.max(score1, score2);
+    } catch (error) {
+      console.error('Error calculating collaboration score:', error);
       return 0;
     }
-    
-    const score1 = parseInt(collaborationData[index1][index2]) || 0;
-    const score2 = parseInt(collaborationData[index2][index1]) || 0;
-    
-    console.log('Collaboration scores:', {
-      group1: group1.header,
-      group2: group2.header,
-      index1,
-      index2,
-      score1,
-      score2
-    });
-    
-    return Math.max(score1, score2);
   };
 
   const calculateGroupCollaborationScores = (groups) => {
-    if (groups.length <= 1) {
-      console.log('Groups length <= 1:', groups);
+    if (!collaborationData || groups.length <= 1) {
       return groups.map(group => ({ ...group, collaborationScore: 0 }));
     }
 
-    // Calculate weighted average for each group
     return groups.map(currentGroup => {
       let totalWeightedScore = 0;
       let totalWeight = 0;
@@ -123,17 +120,7 @@ function App() {
       groups.forEach(otherGroup => {
         if (currentGroup.header !== otherGroup.header) {
           const score = getCollaborationScore(currentGroup, otherGroup);
-          const weight = otherGroup.peopleCount;
-          
-          console.log('Collaboration calculation:', {
-            group1: currentGroup.header,
-            group2: otherGroup.header,
-            score,
-            weight,
-            totalWeightedScore,
-            totalWeight
-          });
-
+          const weight = otherGroup.peopleCount || 0;
           totalWeightedScore += score * weight;
           totalWeight += weight;
         }
@@ -142,13 +129,6 @@ function App() {
       const weightedAverage = totalWeight > 0 
         ? Math.round(totalWeightedScore / totalWeight)
         : 0;
-
-      console.log('Final weighted average:', {
-        group: currentGroup.header,
-        weightedAverage,
-        totalWeightedScore,
-        totalWeight
-      });
 
       return {
         ...currentGroup,
@@ -202,8 +182,10 @@ function App() {
   };
 
   const handleFloorDrop = (group, floorId) => {
+    console.log('Handling floor drop in App.js:', { group, floorId });
     const currentFloor = floorData.find(floor => floor.floor_id === floorId);
     if (!checkCapacity(currentFloor, group)) {
+      console.log('Capacity check failed in App.js');
       return;
     }
 
@@ -214,15 +196,10 @@ function App() {
             return floor;
           }
 
-          const currentPeopleCount = floor.groups.reduce((sum, g) => sum + g.peopleCount, 0);
-          if (currentPeopleCount + group.peopleCount > 200) {
-            return floor;
-          }
-
           const newGroups = [...floor.groups, group];
           const groupsWithScores = calculateGroupCollaborationScores(newGroups);
           const floorScore = calculateFloorScore(groupsWithScores);
-          
+
           return { 
             ...floor, 
             groups: groupsWithScores,
