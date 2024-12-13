@@ -166,6 +166,30 @@ function Floor({
           gap: '10px'
         }}>
           Floor {floorNumber} 
+          {!isZoomedOut && !isExpanded && (
+        <>
+         {groups.length > 0 && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            borderLeft: '1px solid rgba(245, 230, 211, 0.2)',
+            paddingLeft: '20px',
+          }}>
+            <span style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: getCollabMarkerColor(collaborationScore),
+              display: 'inline-block'
+            }} />
+            <span>
+              Avg. Collaboration: {collaborationScore}
+            </span>
+          </div>
+        )}
+        </>
+      )}
           {groups.length > 0 && isZoomedOut && groups.map((group) => {
             return (
               <span 
@@ -185,6 +209,7 @@ function Floor({
             );
           })}
         </div>
+        
           {isZoomedOut && (
             <span style={{ marginLeft: '10px', fontSize: '0.8em' , alignSelf: 'flex-end', color: '#f5e6d3'}}>
               {isExpanded ? '▼' : '▶'}
@@ -193,17 +218,29 @@ function Floor({
         
         
       </div>
+      
 
       {isZoomedOut && isExpanded && (
         <div style={{
           marginTop: '10px',
-          padding: '10px',
+          padding: '15px',
           backgroundColor: 'rgba(0,0,0,0.2)',
           borderRadius: '4px',
-          color: '#f5e6d3'
+          color: '#f5e6d3',
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: '20px',
+          fontSize: '0.9em',
         }}>
           {groups.length > 0 && (
-            <>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              borderRight: '1px solid rgba(245, 230, 211, 0.2)',
+              paddingRight: '20px',
+            }}>
               <span style={{
                 width: '8px',
                 height: '8px',
@@ -211,72 +248,80 @@ function Floor({
                 backgroundColor: getCollabMarkerColor(collaborationScore),
                 display: 'inline-block'
               }} />
-              <span style={{
-                fontSize: '0.9em',
-                opacity: 0.8
-              }}>
+              <span>
                 Avg. Collaboration: {collaborationScore}
               </span>
-            </>
+            </div>
           )}
           
           {index > 0 && (
-            <div style={{ marginBottom: '8px' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              borderRight: '1px solid rgba(245, 230, 211, 0.2)',
+              paddingRight: '20px',
+            }}>
               <span style={{ 
-                display: 'inline-block',
                 width: '8px',
                 height: '8px',
                 borderRadius: '50%',
                 backgroundColor: getScoreColor(floorCollabScores[`${floorData[index-1].floor_id}-${id}`] || 0),
-                marginRight: '8px',
-
               }} />
-              Floor above ({floorData[index-1].floor_id}) collaboration: {
-                floorCollabScores[`${floorData[index-1].floor_id}-${id}`] || 0
-              }
+              <span>
+                Floor above ({floorData[index-1].floor_id}): {
+                  floorCollabScores[`${floorData[index-1].floor_id}-${id}`] || 0
+                }
+              </span>
             </div>
           )}
           
           {index < floorData.length - 1 && (
-            <div>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              borderRight: groups.length > 0 ? '1px solid rgba(245, 230, 211, 0.2)' : 'none',
+              paddingRight: '20px',
+            }}>
               <span style={{ 
-                display: 'inline-block',
                 width: '8px',
                 height: '8px',
                 borderRadius: '50%',
                 backgroundColor: getScoreColor(floorCollabScores[`${id}-${floorData[index+1].floor_id}`] || 0),
-                marginRight: '8px'
               }} />
-              Floor below ({floorData[index+1].floor_id}) collaboration: {
-                floorCollabScores[`${id}-${floorData[index+1].floor_id}`] || 0
-              }
+              <span>
+                Floor below ({floorData[index+1].floor_id}): {
+                  floorCollabScores[`${id}-${floorData[index+1].floor_id}`] || 0
+                }
+              </span>
             </div>
           )}
+
           {groups.length > 0 && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onClear(id);
-            }}
-            style={{
-              background: 'rgba(244, 67, 54, 0.3)',
-              border: 'none',
-              color: '#f5e6d3',
-              padding: '4px 8px',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '0.8em',
-              transition: 'background-color 0.2s',
-              alignSelf: 'right',
-            }}
-            onMouseOver={(e) => e.target.style.background = 'rgba(244, 67, 54, 0.5)'}
-            onMouseOut={(e) => e.target.style.background = 'rgba(244, 67, 54, 0.3)'}
-          >
-            Clear Floor
-          </button>
-        )}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onClear(id);
+              }}
+              style={{
+                background: 'rgba(244, 67, 54, 0.3)',
+                border: 'none',
+                color: '#f5e6d3',
+                padding: '6px 12px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '0.9em',
+                transition: 'background-color 0.2s',
+                marginLeft: 'auto',
+              }}
+              onMouseOver={(e) => e.target.style.background = 'rgba(244, 67, 54, 0.5)'}
+              onMouseOut={(e) => e.target.style.background = 'rgba(244, 67, 54, 0.3)'}
+            >
+              Clear Floor
+            </button>
+          )}
         </div>
-        
       )}
 
       <div style={{
