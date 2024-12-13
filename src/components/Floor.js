@@ -108,6 +108,12 @@ function Floor({
     return '#F44336';                   // Red
   };
 
+  const getGroupColor = (score) => {
+    if (score >= 60) return 'rgba(76, 175, 80, 0.3)';  // Green
+    if (score >= 40) return 'rgba(255, 193, 7, 0.3)';  // Yellow
+    return 'rgba(244, 67, 54, 0.3)';                   // Red
+  };
+
   return (
     <div
       draggable={isZoomedOut}
@@ -159,7 +165,43 @@ function Floor({
           alignItems: 'center',
           gap: '10px'
         }}>
-          Floor {floorNumber} ({groups.length} groups)
+          Floor {floorNumber} 
+          {groups.length > 0 && isZoomedOut && groups.map((group) => {
+            return (
+              <span 
+                key={group.header} 
+                style={{
+                  fontSize: '0.8em', 
+                  backgroundColor: getGroupColor(group.avgScore),
+                  padding: '4px 8px', 
+                  borderRadius: '25%',
+                  border: isCollaborator(group) ? '2px solid #FFFDD0' : 'none',
+                  transform: isCollaborator(group) ? 'scale(1.1)' : 'scale(1)',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {group.header.split(' ')[1]} {/* Just show the number */}
+              </span>
+            );
+          })}
+        </div>
+          {isZoomedOut && (
+            <span style={{ marginLeft: '10px', fontSize: '0.8em' , alignSelf: 'flex-end', color: '#f5e6d3'}}>
+              {isExpanded ? '▼' : '▶'}
+            </span>
+          )}
+        
+        
+      </div>
+
+      {isZoomedOut && isExpanded && (
+        <div style={{
+          marginTop: '10px',
+          padding: '10px',
+          backgroundColor: 'rgba(0,0,0,0.2)',
+          borderRadius: '4px',
+          color: '#f5e6d3'
+        }}>
           {groups.length > 0 && (
             <>
               <span style={{
@@ -177,45 +219,7 @@ function Floor({
               </span>
             </>
           )}
-          {isZoomedOut && (
-            <span style={{ marginLeft: '10px', fontSize: '0.8em' }}>
-              {isExpanded ? '▼' : '▶'}
-            </span>
-          )}
-        </div>
-        
-        {groups.length > 0 && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onClear(id);
-            }}
-            style={{
-              background: 'rgba(244, 67, 54, 0.3)',
-              border: 'none',
-              color: '#f5e6d3',
-              padding: '4px 8px',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '0.8em',
-              transition: 'background-color 0.2s',
-            }}
-            onMouseOver={(e) => e.target.style.background = 'rgba(244, 67, 54, 0.5)'}
-            onMouseOut={(e) => e.target.style.background = 'rgba(244, 67, 54, 0.3)'}
-          >
-            Clear Floor
-          </button>
-        )}
-      </div>
-
-      {isZoomedOut && isExpanded && (
-        <div style={{
-          marginTop: '10px',
-          padding: '10px',
-          backgroundColor: 'rgba(0,0,0,0.2)',
-          borderRadius: '4px',
-          color: '#f5e6d3'
-        }}>
+          
           {index > 0 && (
             <div style={{ marginBottom: '8px' }}>
               <span style={{ 
@@ -248,7 +252,31 @@ function Floor({
               }
             </div>
           )}
+          {groups.length > 0 && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onClear(id);
+            }}
+            style={{
+              background: 'rgba(244, 67, 54, 0.3)',
+              border: 'none',
+              color: '#f5e6d3',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '0.8em',
+              transition: 'background-color 0.2s',
+              alignSelf: 'right',
+            }}
+            onMouseOver={(e) => e.target.style.background = 'rgba(244, 67, 54, 0.5)'}
+            onMouseOut={(e) => e.target.style.background = 'rgba(244, 67, 54, 0.3)'}
+          >
+            Clear Floor
+          </button>
+        )}
         </div>
+        
       )}
 
       <div style={{
