@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import FloorMatrix from './FloorMatrix';
 
 const CompareFloors = ({ floorData, onClose, getCollaborationScore }) => {
   const [selectedFloors, setSelectedFloors] = useState([]);
+  const [showMatrix, setShowMatrix] = useState(false);
 
   console.log(JSON.stringify(floorData, null, 2), "floorData");  
 
@@ -57,7 +59,9 @@ const CompareFloors = ({ floorData, onClose, getCollaborationScore }) => {
     return totalWeightedScore; // Return the total weighted score as a single number
 };
 
-  
+  const generateMatrix = () => {
+    setShowMatrix(true);
+  };
 
   return (
     <div style={{
@@ -68,8 +72,47 @@ const CompareFloors = ({ floorData, onClose, getCollaborationScore }) => {
       color: '#f5e6d3',
       width: '100%',
       margin: '0 auto',
+      position: 'relative'
     }}>
       <h2>Compare Floors</h2>
+      
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+          position: "absolute",
+          top: "20px",
+          right: "20px",
+          zIndex: 1000,
+          padding: "10px",
+          border: "1px solid darkgray",
+          borderRadius: "10px",
+        }}
+      >
+        <button
+          onClick={generateMatrix}
+          style={{
+            backgroundColor: "rgba(245, 230, 211, 0.1)",
+            border: "none",
+            color: "#f5e6d3",
+            padding: "8px 16px",
+            borderRadius: "6px",
+            cursor: "pointer",
+            fontSize: "0.9em",
+            transition: "background-color 0.2s",
+          }}
+          onMouseOver={(e) =>
+            (e.target.style.backgroundColor = "rgba(245, 230, 211, 0.2)")
+          }
+          onMouseOut={(e) =>
+            (e.target.style.backgroundColor = "rgba(245, 230, 211, 0.1)")
+          }
+        >
+          Generate Matrix
+        </button>
+      </div>
+
       <div>
         <h3>Available Floors</h3>
         {floorData.filter(floor => floor.groups.length > 0).map(floor => (
@@ -156,6 +199,14 @@ const CompareFloors = ({ floorData, onClose, getCollaborationScore }) => {
       >
         Close
       </button>
+
+      {showMatrix && (
+        <FloorMatrix 
+          floorData={floorData}
+          onClose={() => setShowMatrix(false)}
+          calculateGroupCollaborationScore={calculateGroupCollaborationScore}
+        />
+      )}
     </div>
   );
 };

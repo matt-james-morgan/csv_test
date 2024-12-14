@@ -184,101 +184,10 @@ function FloorPlan({
     );
   };
 
-  const generateMatrix = () => {
-    console.log("Generating matrix");
-  };
+  
 
   return (
     <>
-      {isZoomedOut && (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "10px",
-            position: "absolute",
-            top: "20px",
-            right: "1px",
-            zIndex: 1000,
-            padding: "10px",
-            border: "1px solid darkgray",
-            borderRadius: "10px",
-          }}
-        >
-          <button
-            onClick={sortFloorsByScore}
-            style={{
-              top: "20px",
-              right: "20px",
-              backgroundColor: "rgba(245, 230, 211, 0.1)",
-              border: "none",
-              color: "#f5e6d3",
-              padding: "8px 16px",
-              borderRadius: "6px",
-              cursor: "pointer",
-              fontSize: "0.9em",
-              zIndex: 1000,
-              transition: "background-color 0.2s",
-            }}
-            onMouseOver={(e) =>
-              (e.target.style.backgroundColor = "rgba(245, 230, 211, 0.2)")
-            }
-            onMouseOut={(e) =>
-              (e.target.style.backgroundColor = "rgba(245, 230, 211, 0.1)")
-            }
-          >
-            Sort by Score
-          </button>
-          <button
-            onClick={generateMatrix}
-            style={{
-              top: "20px",
-              right: "20px",
-              backgroundColor: "rgba(245, 230, 211, 0.1)",
-              border: "none",
-              color: "#f5e6d3",
-              padding: "8px 16px",
-              borderRadius: "6px",
-              cursor: "pointer",
-              fontSize: "0.9em",
-              zIndex: 1000,
-              transition: "background-color 0.2s",
-            }}
-            onMouseOver={(e) =>
-              (e.target.style.backgroundColor = "rgba(245, 230, 211, 0.2)")
-            }
-            onMouseOut={(e) =>
-              (e.target.style.backgroundColor = "rgba(245, 230, 211, 0.1)")
-            }
-          >
-            Generate Matrix
-          </button>
-          <button
-            onClick={resetSort}
-            style={{
-              top: "20px",
-              right: "20px",
-              backgroundColor: "rgba(245, 230, 211, 0.1)",
-              border: "none",
-              color: "red",
-              padding: "8px 16px",
-              borderRadius: "6px",
-              cursor: "pointer",
-              fontSize: "0.9em",
-              zIndex: 1000,
-              transition: "background-color 0.2s",
-            }}
-            onMouseOver={(e) =>
-              (e.target.style.backgroundColor = "rgba(245, 230, 211, 0.2)")
-            }
-            onMouseOut={(e) =>
-              (e.target.style.backgroundColor = "rgba(245, 230, 211, 0.1)")
-            }
-          >
-            Reset Sort
-          </button>
-        </div>
-      )}
       <div
         className={`floor-plan ${isZoomedOut ? "zoomed-out" : ""} ${
           isIsometricView ? "isometric" : ""
@@ -342,7 +251,7 @@ function FloorPlan({
                     style={{
                       position: isZoomedOut ? "relative" : "absolute",
                       width: "70%",
-                      height: isZoomedOut ? "90%" : "70%",
+                      height: isZoomedOut ? "80%" : "70%",
                       transform: isZoomedOut
                         ? "none"
                         : isIsometricView
@@ -362,7 +271,7 @@ function FloorPlan({
                         ? "auto"
                         : "50%",
                       top: isIsometricView ? "auto" : "50%",
-                      marginBottom: isZoomedOut ? "20px" : "0",
+                      
                     }}
                   >
                     <Floor

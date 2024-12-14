@@ -89,17 +89,28 @@ function Floor({
   };
 
   const handleFloorDrop = (e) => {
-    if (!isZoomedOut) {
-      console.log('Not in zoomed out mode, handling as group drop');
-      handleDrop(e);
-      return;
-    }
-    
     e.preventDefault();
-    console.log('Floor reorder drop event triggered');
-    const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
-    console.log('Floor reorder from index:', fromIndex, 'to index:', index);
-    onFloorDrop(fromIndex, index);
+    
+    try {
+      // Check for group data first
+      const groupData = e.dataTransfer.getData('application/json');
+      if (groupData) {
+        console.log('Group drop detected');
+        handleDrop(e);
+        return;
+      }
+
+      // If no group data, check for floor index
+      const floorIndex = e.dataTransfer.getData('text/plain');
+      if (floorIndex && isZoomedOut) {
+        console.log('Floor reorder detected');
+        const fromIndex = parseInt(floorIndex);
+        onFloorDrop(fromIndex, index);
+        return;
+      }
+    } catch (error) {
+      console.error('Error in handleFloorDrop:', error);
+    }
   };
 
   const getScoreColor = (score) => {
