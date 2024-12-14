@@ -44,6 +44,14 @@ function FloorPlan({
   const [selectedFloor, setSelectedFloor] = useState(null);
   const [draggedFloorId, setDraggedFloorId] = useState(null);
   const [floorCollabScores, setFloorCollabScores] = useState({});
+  const [hoveredFloorId, setHoveredFloorId] = useState(null);
+
+  const calculateGroupCollaborationScore = useCallback((group1, group2) => {
+    const score = getCollaborationScore(group1, group2);
+    const weight1 = group1.peopleCount;
+    const weight2 = group2.peopleCount;
+    return (score * weight1 + score * weight2) / (weight1 + weight2);
+  }, [getCollaborationScore]);
 
   const handleFloorDragStart = (floorId) => {
     setDraggedFloorId(floorId);
@@ -63,35 +71,48 @@ function FloorPlan({
     });
   };
 
-  const calculateGroupCollaborationScore = useCallback(
-    (group1, group2) => {
-      const score = getCollaborationScore(group1, group2);
-      const weight1 = group1.peopleCount;
-      const weight2 = group2.peopleCount;
-      return (score * weight1 + score * weight2) / (weight1 + weight2);
-    },
-    [getCollaborationScore]
-  );
+  const calculateCollaborationAverage = useCallback((floor1, floor2) => {
+    if (!floor1?.groups || !floor2?.groups) return 0;
+    if (!floor1.groups.length || !floor2.groups.length) return 0;
 
-  const calculateCollaborationAverage = useCallback(
-    (floor1, floor2) => {
-      if (!floor1?.groups.length || !floor2?.groups.length) return 0;
+    let totalScore = 0;
+    let count = 0;
 
-      let totalScore = 0;
-      let count = 0;
-
-      floor1.groups.forEach((group1) => {
-        floor2.groups.forEach((group2) => {
-          const score = calculateGroupCollaborationScore(group1, group2);
-          totalScore += score;
-          count++;
-        });
+    floor1.groups.forEach(group1 => {
+      floor2.groups.forEach(group2 => {
+        const score = calculateGroupCollaborationScore(group1, group2);
+        totalScore += score;
+        count++;
       });
+    });
 
-      return count > 0 ? Number((totalScore / count).toFixed(2)) : 0;
-    },
-    [calculateGroupCollaborationScore]
-  );
+    return count > 0 ? Number((totalScore / count).toFixed(2)) : 0;
+  }, [calculateGroupCollaborationScore]);
+
+  const findHighestCollabFloor = (floorId) => {
+    if (!floorId) return null;
+    
+    let highestScore = -1;
+    let highestCollabFloorId = null;
+    
+    const currentFloor = floorData.find(f => f.floor_id === floorId);
+    if (!currentFloor) return null;
+
+    floorData.forEach(otherFloor => {
+      if (otherFloor.floor_id !== floorId) {
+        const score = calculateCollaborationAverage(currentFloor, otherFloor);
+        
+        if (score > highestScore) {
+          highestScore = score;
+          highestCollabFloorId = otherFloor.floor_id;
+        }
+      }
+    });
+    
+    return highestCollabFloorId;
+  };
+
+  const highestCollabFloorId = findHighestCollabFloor(hoveredFloorId);
 
   useEffect(() => {
     const handleKeyPress = (e) => {
@@ -167,22 +188,7 @@ function FloorPlan({
     handleFloorDrop(group, floorId);
   };
 
-  const sortFloorsByScore = () => {
-    setFloorData((prevData) => {
-      const sortedData = [...prevData].sort((a, b) => {
-        const scoreA = a.collaborationScore || 0;
-        const scoreB = b.collaborationScore || 0;
-        return scoreB - scoreA; // Sort in descending order
-      });
-      return sortedData;
-    });
-  };
 
-  const resetSort = () => {
-    setFloorData((prevData) =>
-      prevData.sort((a, b) => a.floor_id - b.floor_id)
-    );
-  };
 
   
 
@@ -250,7 +256,7 @@ function FloorPlan({
                   <div
                     style={{
                       position: isZoomedOut ? "relative" : "absolute",
-                      width: "70%",
+                      width: "90%",
                       height: isZoomedOut ? "80%" : "70%",
                       transform: isZoomedOut
                         ? "none"
@@ -271,7 +277,8 @@ function FloorPlan({
                         ? "auto"
                         : "50%",
                       top: isIsometricView ? "auto" : "50%",
-                      
+                      marginBottom: isZoomedOut ? "10px" : "0",
+                      marginTop: isZoomedOut ? "10px" : "0",
                     }}
                   >
                     <Floor
@@ -316,6 +323,8 @@ function FloorPlan({
                       onFloorDrop={handleFloorReorder}
                       floorCollabScores={floorCollabScores}
                       floorData={floorData}
+                      onFloorHover={setHoveredFloorId}
+                      isHighlightedFloor={floor.floor_id === highestCollabFloorId}
                     />
                   </div>
                 </React.Fragment>
@@ -324,33 +333,7 @@ function FloorPlan({
           </div>
         </div>
 
-        {!isZoomedOut && (
-          <div
-            style={{
-              position: "fixed",
-              bottom: "20px",
-              left: "0",
-              width: "100%",
-              textAlign: "center",
-              color: "#f5e6d3",
-              fontSize: "0.75em",
-              zIndex: 1000,
-              pointerEvents: "none",
-            }}
-          >
-            <div>
-              <span style={{ marginRight: "20px" }}>
-                ⬆️ Use Up Arrow to go up a floor
-              </span>
-              <span>⬇️ Use Down Arrow to go down a floor</span>
-            </div>
-            <div style={{ marginTop: "5px", color: "#999" }}>
-              {`${
-                floorData.length - currentFloorIndex - 1
-              } floors above, ${currentFloorIndex} floors below`}
-            </div>
-          </div>
-        )}
+   
 
         {selectedFloor && (
           <FloorDetail

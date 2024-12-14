@@ -42,6 +42,8 @@ function Floor({
   opacity = 1,
   floorCollabScores = {},
   floorData = [],
+  onFloorHover,
+  isHighlightedFloor,
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState(null);
@@ -130,22 +132,9 @@ function Floor({
       draggable={isZoomedOut}
       onDragStart={handleFloorDragStart}
       onDrop={handleFloorDrop}
-      onDragOver={(e) => {
-        e.preventDefault();
-        if (isZoomedOut) {
-          e.currentTarget.style.borderTop = '2px solid #f5e6d3';
-        }
-      }}
-      onDragLeave={(e) => {
-        if (isZoomedOut) {
-          e.currentTarget.style.borderTop = 'none';
-        }
-      }}
-      onDragEnd={(e) => {
-        if (isZoomedOut) {
-          e.currentTarget.style.borderTop = 'none';
-        }
-      }}
+      onDragOver={(e) => e.preventDefault()}
+      onMouseEnter={() => isZoomedOut && onFloorHover(id)}
+      onMouseLeave={() => isZoomedOut && onFloorHover(null)}
       style={{
         padding: '20px',
         borderRadius: '8px',
@@ -157,6 +146,9 @@ function Floor({
         backgroundColor: getDominantTeamColor(groups),
         ...style,
         opacity,
+        transition: 'all 0.3s ease',
+        border: isHighlightedFloor ? '2px solid #FFFDD0' : 'none',
+        boxShadow: isHighlightedFloor ? '0 0 15px rgba(255, 253, 208, 0.5)' : 'none',
       }}
     >
       <div 

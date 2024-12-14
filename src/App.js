@@ -169,7 +169,7 @@ function App() {
       (sum, group) => sum + group.peopleCount,
       0
     );
-    const wouldExceedCapacity = currentPeopleCount + newGroup.peopleCount > 300;
+    const wouldExceedCapacity = currentPeopleCount + newGroup.peopleCount > 500;
 
     if (wouldExceedCapacity) {
       setCapacityWarning(
@@ -183,6 +183,19 @@ function App() {
 
   const handleFloorDrop = (group, floorId) => {
     console.log('Handling floor drop in App.js:', { group, floorId });
+    
+    // Check if group already exists on any floor
+    const groupExistsOnAnotherFloor = floorData.some(floor => 
+      floor.floor_id !== floorId && floor.groups.some(g => g.header === group.header)
+    );
+
+    if (groupExistsOnAnotherFloor) {
+      console.log('Group already exists on another floor');
+      setCapacityWarning(`${group.header} already exists on another floor`);
+      setTimeout(() => setCapacityWarning(null), 3000);
+      return;
+    }
+
     const currentFloor = floorData.find(floor => floor.floor_id === floorId);
     if (!checkCapacity(currentFloor, group)) {
       console.log('Capacity check failed in App.js');
