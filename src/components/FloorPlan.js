@@ -39,6 +39,7 @@ function FloorPlan({
   capacityWarning,
   setFloorData,
   getCollaborationScore,
+  handleGroupHover,
 }) {
   const [currentFloorIndex, setCurrentFloorIndex] = useState(0);
   const [selectedFloor, setSelectedFloor] = useState(null);
@@ -229,7 +230,7 @@ function FloorPlan({
                 color: "white",
                 padding: "10px 20px",
                 borderRadius: "4px",
-                zIndex: 1000,
+                zIndex: 10,
                 animation: "fadeIn 0.3s ease-in-out",
               }}
             >
@@ -269,7 +270,7 @@ function FloorPlan({
                       pointerEvents: isCurrent ? "auto" : "none",
                       transformStyle: isIsometricView ? "preserve-3d" : "flat",
                       transformOrigin: "center center",
-                      zIndex: floorData.length - Math.abs(relativeIndex),
+                      // zIndex: floorData.length - Math.abs(relativeIndex),
                       perspective: isIsometricView ? "1500px" : "none",
                       left: isZoomedOut
                         ? "5%"
@@ -285,7 +286,10 @@ function FloorPlan({
                       id={floor.floor_id}
                       index={index}
                       floorNumber={floor.floor_id}
-                      groups={floor.groups || []}
+                      groups={floor.groups.map(group => ({
+                        ...group,
+                        isHighlighted: topCollaborators.includes(group.header)
+                      }))}
                       collaborationScore={floor.collaborationScore}
                       onDrop={handleGroupDrop}
                       onClear={handleFloorClearWithDetailClose}
@@ -325,6 +329,7 @@ function FloorPlan({
                       floorData={floorData}
                       onFloorHover={setHoveredFloorId}
                       isHighlightedFloor={floor.floor_id === highestCollabFloorId}
+                      handleGroupHover={handleGroupHover}
                     />
                   </div>
                 </React.Fragment>

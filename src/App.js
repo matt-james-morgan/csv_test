@@ -23,6 +23,7 @@ function App() {
   const [topCollaborators, setTopCollaborators] = useState([]);
   const [showCompare, setShowCompare] = useState(false);
   const [capacityWarning, setCapacityWarning] = useState(null);
+  const [listData, setListData] = useState([]);
   
   useEffect(() => {
     const loadCSVData = async () => {
@@ -53,9 +54,6 @@ function App() {
           scoresAbove10: parseInt(scoresAbove10[index]) || 0
         }));
 
-        console.log('Transformed Matrix Data:', transformedMatrixData);
-        setMatrixData(transformedMatrixData);
-
         // Load collaboration data
         const collabResponse = await fetch(`${process.env.PUBLIC_URL}/Group Cross Collab.csv`);
         const collabText = await collabResponse.text();
@@ -66,8 +64,12 @@ function App() {
 
         // Remove the first column (People #) and first row (headers)
         const cleanedData = parsedCollabData.slice(1).map(row => row.slice(2));
-        setCollaborationData(cleanedData);
-
+        
+        // Process the data with pre-calculated collaborators
+        processImportedData({
+          matrixData: transformedMatrixData,
+          collaborationData: cleanedData
+        });
 
       } catch (error) {
         console.error('Error loading CSV:', error);
@@ -182,34 +184,35 @@ function App() {
   };
 
   const handleFloorDrop = (group, floorId) => {
-    console.log('Handling floor drop in App.js:', { group, floorId });
+    console.log('Handling floor drop:', { group, floorId });
+
     
-    // Check if group already exists on any floor
-    const groupExistsOnAnotherFloor = floorData.some(floor => 
-      floor.floor_id !== floorId && floor.groups.some(g => g.header === group.header)
-    );
+    
+    // First remove the group from any other floor it might be on
+    setFloorData(prevFloorData => {
+      return prevFloorData.map(floor => {
+        // If this is not the target floor, remove the group if it exists
+        if (floor.floor_id !== floorId) {
+          return {
+            ...floor,
+            groups: floor.groups.filter(g => g.header !== group.header)
+          };
+        }
+        return floor;
+      });
+    });
 
-    if (groupExistsOnAnotherFloor) {
-      console.log('Group already exists on another floor');
-      setCapacityWarning(`${group.header} already exists on another floor`);
-      setTimeout(() => setCapacityWarning(null), 3000);
-      return;
-    }
-
-    const currentFloor = floorData.find(floor => floor.floor_id === floorId);
-    if (!checkCapacity(currentFloor, group)) {
-      console.log('Capacity check failed in App.js');
-      return;
-    }
-
+    // Then add the group to the new floor
     setFloorData(prevFloorData => {
       return prevFloorData.map(floor => {
         if (floor.floor_id === floorId) {
-          if (floor.groups.some(g => g.header === group.header)) {
+          // Check capacity before adding
+          if (!checkCapacity(floor, group)) {
             return floor;
           }
 
-          const newGroups = [...floor.groups, group];
+          // Preserve topCollaborators when adding to floor
+          const newGroups = [...floor.groups, { ...group, topCollaborators: group.topCollaborators }];
           const groupsWithScores = calculateGroupCollaborationScores(newGroups);
           const floorScore = calculateFloorScore(groupsWithScores);
 
@@ -222,6 +225,20 @@ function App() {
         return floor;
       });
     });
+
+    // Remove from matrix data after successful floor update
+    setMatrixData(prevMatrixData => {
+      console.log('Removing from matrix data:', group.header);
+      console.log('Previous matrix data:', prevMatrixData.map(m => m.header));
+      const filtered = prevMatrixData.filter(matrix => matrix.header !== group.header);
+      console.log('Filtered matrix data:', filtered.map(m => m.header));
+      return filtered;
+    });
+  
+    // Also update listData to stay in sync
+    setListData(prevListData => 
+      prevListData.filter(item => item.header !== group.header)
+    );
   };
 
   const handleGroupDelete = (header) => {
@@ -248,9 +265,86 @@ function App() {
     });
   };
 
-  const handleGroupHover = (group, collaborators) => {
+  const handleGroupHover = (group, topCollabHeaders) => {
     setHoveredGroup(group);
-    setTopCollaborators(collaborators);
+    setTopCollaborators(topCollabHeaders || []);
+
+    console.log('Top collaborators:', topCollabHeaders);
+
+    console.log('Hovered group:', group);
+
+    console.log(floorData.map(floor => ({
+      ...floor,
+      groups: floor.groups.map(g => ({
+        ...g,
+        isHighlighted: topCollabHeaders?.includes(g.header) || false
+      }))
+    })));
+
+    // Update floor data to highlight groups
+    setFloorData(prevFloorData => 
+      prevFloorData.map(floor => ({
+        ...floor,
+        groups: floor.groups.map(g => ({
+          ...g,
+          isHighlighted: topCollabHeaders?.includes(g.header) || false
+        }))
+      }))
+    );
+  };
+
+  const processImportedData = ({ matrixData, collaborationData }) => {
+    try {
+      setCollaborationData(collaborationData);
+
+      // Create matrix data with pre-calculated top collaborators
+      const matrixGroupsWithCollabs = matrixData.map(group => {
+        const topCollabs = matrixData
+          .filter(g => g.header !== group.header)
+          .map(g => ({
+            group: g,
+            score: calculateCollaborationScore(group, g, collaborationData)
+          }))
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 5);
+
+        return {
+          ...group,
+          topCollaborators: topCollabs
+        };
+      });
+
+      setMatrixData(matrixGroupsWithCollabs);
+      setListData(matrixGroupsWithCollabs);
+
+    } catch (error) {
+      console.error('Error processing imported data:', error);
+    }
+  };
+
+  // Helper function to calculate collaboration score
+  const calculateCollaborationScore = (group1, group2, collaborationData) => {
+    if (!collaborationData || !group1?.header || !group2?.header) {
+      return 0;
+    }
+
+    try {
+      const index1 = getGroupNumber(group1.header);
+      const index2 = getGroupNumber(group2.header);
+
+      if (isNaN(index1) || isNaN(index2) || 
+          !collaborationData[index1] || !collaborationData[index2]) {
+        return 0;
+      }
+
+      const score1 = Number(collaborationData[index1][index2]) || 0;
+      const score2 = Number(collaborationData[index2][index1]) || 0;
+
+      return Math.max(score1, score2);
+    } catch (error) {
+      console.error('Error calculating collaboration score:', error);
+      return 0;
+    }
   };
 
   return (
@@ -376,7 +470,7 @@ function App() {
           padding: '0 20px 20px 20px'
         }}>
           <MatrixList 
-            matrixData={matrixData} 
+            matrixData={listData} 
             collaborationData={collaborationData}
             onHoverGroup={handleGroupHover}
           />
@@ -408,6 +502,7 @@ function App() {
                 onGroupDelete={handleGroupDelete}
                 capacityWarning={capacityWarning}
                 getCollaborationScore={getCollaborationScore}
+                handleGroupHover={handleGroupHover}
               />
             )}
           </div>

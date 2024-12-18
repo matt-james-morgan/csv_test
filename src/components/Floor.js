@@ -44,6 +44,7 @@ function Floor({
   floorData = [],
   onFloorHover,
   isHighlightedFloor,
+  handleGroupHover,
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState(null);
@@ -75,14 +76,7 @@ function Floor({
     }
   };
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-  };
 
-  const isCollaborator = (group) => {
-    if (!hoveredGroup || !topCollaborators) return false;
-    return topCollaborators.some(collaborator => collaborator.header === group.header);
-  };
 
   const handleFloorDragStart = (e) => {
     if (!isZoomedOut) return;
@@ -125,6 +119,23 @@ function Floor({
     if (score >= 60) return 'rgba(76, 175, 80, 0.3)';  // Green
     if (score >= 40) return 'rgba(255, 193, 7, 0.3)';  // Yellow
     return 'rgba(244, 67, 54, 0.3)';                   // Red
+  };
+
+  const handleGroupNumberHover = (group) => {
+    if (!group) {
+      handleGroupHover(null, []);
+      return;
+    }
+    
+    // Use pre-calculated top collaborators
+    const topCollabHeaders = group.topCollaborators 
+      ? group.topCollaborators.map(collab => collab.group.header)
+      : [];
+    handleGroupHover(group, topCollabHeaders);
+  };
+
+  const handleGroupClick = (group) => {
+    setSelectedGroup(group);
   };
 
   return (
@@ -194,6 +205,7 @@ function Floor({
         </>
       )}
           {groups.length > 0 && isZoomedOut && groups.map((group) => {
+            
             return (
               <span 
                 key={group.header} 
@@ -202,12 +214,17 @@ function Floor({
                   backgroundColor: getGroupColor(group.avgScore),
                   padding: '4px 8px', 
                   borderRadius: '25%',
-                  border: isCollaborator(group) ? '2px solid #FFFDD0' : 'none',
-                  transform: isCollaborator(group) ? 'scale(1.1)' : 'scale(1)',
+                  border: group.isHighlighted ? '2px solid #FFFDD0' : 'none',
+                  transform: group.isHighlighted ? 'scale(1.1)' : 'scale(1)',
                   transition: 'all 0.2s ease',
+                  cursor: 'pointer',
                 }}
+                onMouseEnter={() => handleGroupNumberHover(group)}
+                onMouseLeave={() => handleGroupNumberHover(null)}
+                onClick={() => handleGroupClick(group)}
+                zIndex={100}
               >
-                {group.header.split(' ')[1]} {/* Just show the number */}
+                {group.header.split(' ')[1]}
               </span>
             );
           })}
@@ -341,10 +358,12 @@ function Floor({
           <Group 
             key={group.header} 
             {...group} 
-            isHighlighted={isCollaborator(group)}
+            isHighlighted={group.isHighlighted}
             isHovered={hoveredGroup?.header === group.header}
             onDelete={() => onGroupDelete(group.header)}
             isZoomedOut={isZoomedOut}
+            onGroupClick={handleGroupClick}
+            group={group}
           />
         ))}
       </div>

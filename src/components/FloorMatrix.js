@@ -36,7 +36,7 @@ function FloorMatrix({ floorData, onClose, calculateGroupCollaborationScore }) {
       maxWidth: '90vw',
       maxHeight: '90vh',
       overflow: 'auto',
-      zIndex: 1000,
+      zIndex: 10,
       boxShadow: '0 0 20px rgba(0,0,0,0.5)'
     }}>
       <div style={{

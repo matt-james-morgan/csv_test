@@ -1,6 +1,6 @@
 import '../styles/CustomScrollbar.css';
 
-const GroupModal = ({ group, onClose, collaborators = [] }) => {
+const GroupModal = ({ group, onClose }) => {
   const maxTraffic = Math.max(group.internalTraffic, group.orgTraffic, group.externalTraffic);
   
   const getTrafficWidth = (traffic) => {
@@ -17,7 +17,7 @@ const GroupModal = ({ group, onClose, collaborators = [] }) => {
       padding: '20px',
       borderRadius: '8px',
       boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-      zIndex: 1001,
+      zIndex: 1000,
       minWidth: '400px',
       maxWidth: '600px',
       maxHeight: '80vh',
@@ -67,42 +67,44 @@ const GroupModal = ({ group, onClose, collaborators = [] }) => {
         </div>
       </div>
 
-      {/* Collaborators Section */}
-      <div style={{ 
-        marginTop: '20px',
-        borderTop: '1px solid rgba(245, 230, 211, 0.1)',
-        paddingTop: '20px'
-      }}>
-        <h3 style={{ 
-          color: '#f5e6d3', 
-          fontSize: '1.1em', 
-          marginBottom: '15px' 
-        }}>
-          Top Collaborators
-        </h3>
+      {/* Top Collaborators Section */}
+      {group.topCollaborators && group.topCollaborators.length > 0 && (
         <div style={{ 
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px'
+          marginTop: '20px',
+          borderTop: '1px solid rgba(245, 230, 211, 0.1)',
+          paddingTop: '20px'
         }}>
-          {collaborators.map((collaborator) => (
-            <div
-              key={collaborator.header}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                color: '#f5e6d3',
-                padding: '8px',
-                backgroundColor: 'rgba(245, 230, 211, 0.05)',
-                borderRadius: '4px'
-              }}
-            >
-              <span>{collaborator.header}</span>
-              <span>Collaboration Score: {collaborator.collaborationScore}</span>
-            </div>
-          ))}
+          <h3 style={{ 
+            color: '#f5e6d3', 
+            fontSize: '1.1em', 
+            marginBottom: '15px' 
+          }}>
+            Top Collaborators
+          </h3>
+          <div style={{ 
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px'
+          }}>
+            {group.topCollaborators.map((collab, index) => (
+              <div
+                key={index}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  color: '#f5e6d3',
+                  padding: '8px',
+                  backgroundColor: 'rgba(245, 230, 211, 0.05)',
+                  borderRadius: '4px'
+                }}
+              >
+                <span>{collab.group.header}</span>
+                <span>Collaboration Score: {collab.score}</span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <button
         onClick={onClose}

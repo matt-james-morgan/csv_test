@@ -25,7 +25,7 @@ function FloorDetail({ floor, onClose, onClear, onGroupSelect }) {
       overflow: 'auto',
       overflowX: 'hidden',
       boxShadow: '0 8px 32px rgba(0, 0, 0, 0.24)',
-      zIndex: 1000,
+      zIndex: 1,
     }}>
       <div style={{
         display: 'flex',
@@ -133,6 +133,31 @@ function FloorDetail({ floor, onClose, onClear, onGroupSelect }) {
                 <strong>Scores Above 10:</strong>
                 <div>{group.scoresAbove10}</div>
               </div>
+
+              {group.topCollaborators && group.topCollaborators.length > 0 && (
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <strong>Top Collaborators:</strong>
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    marginTop: '8px'
+                  }}>
+                    {group.topCollaborators.map((collab, i) => (
+                      <div key={i} style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        padding: '4px 8px',
+                        backgroundColor: 'rgba(0,0,0,0.2)',
+                        borderRadius: '4px'
+                      }}>
+                        <span>{collab.group.header}</span>
+                        <span>Score: {collab.score}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div>
                 <strong>Traffic Metrics:</strong>
